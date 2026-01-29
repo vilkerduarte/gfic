@@ -128,8 +128,7 @@
                             const pageNumber = i + 1;
 
 
-
-                            const jpgUrl = 'http://localhost:5173/logo_white.jpg'
+                            const jpgUrl = window.location.origin+'/logo_white.jpg'
                             const jpgImageBytes = await fetch(jpgUrl).then((res) => res.arrayBuffer())
 
                             const jpgImage = await pdfDoc.embedJpg(jpgImageBytes)
