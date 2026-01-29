@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@reference 'tailwindcss';
+body{
+    @apply w-screen h-screen overflow-x-hidden bg-fixed bg-gradient-to-br from-slate-900 to-black text-neutral-100
+}

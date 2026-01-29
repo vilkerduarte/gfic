@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int                 @id @default(autoincrement())
+  hash              String              @unique @default(uuid())
+  email             String              @unique
+  password          String
+  name              String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  balance           Int                 @default(0)
+  credits           credits?
+  invoices          invoices[]
+  my_assets         my_assets[]
+  my_learn_products my_learn_products[]
+  permissions       Permission[]
+  reports           reports[]
+  sessions          Session[]
+  userConfigs       UserConfig[]
+
+  @@map("users")
+}
+
+model Config {
+  id     Int    @id @default(autoincrement())
+  config String
+  value  String
+
+  @@map("configs")
+}
+
+model Permission {
+  id         Int    @id @default(autoincrement())
+  userId     Int
+  permission String
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "permissions_userId_fkey")
+  @@map("permissions")
+}
+
+model Session {
+  id          Int      @id @default(autoincrement())
+  hash        String   @unique @default(uuid())
+  userId      Int
+  fingerprint String?
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "sessions_userId_fkey")
+  @@map("sessions")
+}
+
+model UserConfig {
+  id     Int    @id @default(autoincrement())
+  userId Int
+  config String
+  value  String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "user_configs_userId_fkey")
+  @@map("user_configs")
+}
+
+model assets {
+  id                   Int     @id @default(autoincrement())
+  currency             String? @db.VarChar(5)
+  symbol               String  @db.VarChar(200)
+  exchangeName         String? @db.VarChar(64)
+  type                 String  @db.VarChar(64)
+  fullExchangeName     String  @db.VarChar(128)
+  instrumentType       String? @db.Text
+  gmtoffset            Int?
+  market               String? @db.Text
+  timezone             String? @db.Text
+  exchangeTimezoneName String? @db.Text
+  longName             String? @db.Text
+  shortName            String? @db.Text
+  image                String? @db.Text
+
+  @@unique([symbol, fullExchangeName, type], map: "symbol")
+}
+
+model credits {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  value      Int
+  created_at DateTime  @default(now()) @db.DateTime(0)
+  expires_at DateTime? @db.DateTime(0)
+  balance    Int
+  status     String    @default("active") @db.VarChar(32)
+  users      User      @relation(fields: [id], references: [id], onDelete: Cascade, map: "credits_ibfk_1")
+}
+
+model my_assets {
+  id      Int     @id @default(autoincrement())
+  symbol  String  @db.VarChar(32)
+  name    String? @db.Text
+  data    Json
+  user_id Int
+  hash    String  @unique(map: "hash") @db.VarChar(128)
+  users   User    @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "my_assets_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model reports {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  symbol     String   @db.VarChar(64)
+  created_at DateTime @default(now()) @db.DateTime(0)
+  status     String   @default("pending") @db.VarChar(32)
+  path       String   @db.Text
+  hash       String   @unique(map: "hash") @db.VarChar(64)
+  users      User     @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "reports_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model invoices {
+  id         Int      @id @default(autoincrement())
+  credits    Int
+  value      Int
+  cpf        String   @db.VarChar(14)
+  txid       String   @unique(map: "txid") @db.VarChar(128)
+  data       Json?
+  created_at DateTime @default(now()) @db.DateTime(0)
+  updated_at DateTime @default(now()) @db.DateTime(0)
+  status     String   @default("pending") @db.VarChar(64)
+  user_id    Int
+  users      User     @relation(fields: [user_id], references: [id], onDelete: NoAction, map: "invoices_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model learn_products {
+  id          Int     @id @default(autoincrement())
+  title       String  @db.Text
+  description String  @db.Text
+  thumbnail   String? @db.Text
+  price       Int
+  type        String  @default("pdf") @db.VarChar(64)
+  hash        String  @unique(map: "hash") @db.VarChar(128)
+}
+
+model my_learn_products {
+  id                      Int                 @id @default(autoincrement())
+  product_id              Int
+  created_at              DateTime            @default(now()) @db.DateTime(0)
+  user_id                 Int
+  my_learn_products       my_learn_products   @relation("my_learn_productsTomy_learn_products", fields: [product_id], references: [id], onDelete: NoAction, map: "my_learn_products_ibfk_1")
+  other_my_learn_products my_learn_products[] @relation("my_learn_productsTomy_learn_products")
+  users                   User                @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "my_learn_products_ibfk_2")
+
+  @@index([product_id], map: "product_id")
+  @@index([user_id], map: "user_id")
+}

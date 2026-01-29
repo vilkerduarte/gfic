@@ -1,0 +1,23 @@
+{
+  "name": "GFIC - Global Financial Information Center",
+  "short_name": "GFIC",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#312e81",
+  "description": "Relatorios de açoes, fundos e investimentos com IA.",
+  "icons": [
+    {
+      "src": "/logo_white_large.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo_white.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Financeiro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+        integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        /* Estilos opcionais apenas para visualização */
+        #conteudoParaPdf {
+            color: #0f172a !important;
+            background-color: #ffffff;
+            min-height: 99.5vh;
+            /* padding: 80px 30px 30px 30px; */
+            /* margin: 20px; */
+            /* margin-bottom: 15px; */
+            font-size: 10pt;
+            padding-right: 10px;
+            box-sizing: border-box;
+            font-family: 'Open Sans', 'Calibri', sans-serif;
+            text-align: justify;
+        }
+
+        section {
+            page-break-inside: avoid;
+        }
+        h1,h2,h3,h4,h5{
+            text-align: left;
+        }
+        h1 {
+            font-size: 1.5rem;
+            color: #172554;
+        }
+
+        h2 {
+            font-size: 1.35rem;
+        }
+
+        h3 {
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="conteudoParaPdf">
+        
+    </div>
+    <script>
+        const { StandardFonts, rgb } = PDFLib;
+        document.addEventListener('DOMContentLoaded', () => {
+            const elemento = document.getElementById('conteudoParaPdf');
+
+            window.gerarPdf = async (content, date = null) => {
+                // alert(content);
+                if (typeof content == 'string') {
+                    elemento.innerHTML = content;
+                }
+                if (!date) {
+                    date = new Date();
+                }
+                
+                await new Promise((resolve)=>{
+                    setTimeout(()=>{
+                        resolve()
+                    },1000)
+                })
+                const opcoes = {
+                    margin: [30, 8, 20, 8],
+                    filename: 'relatorio_personalizado.pdf',
+                    image: { type: 'jpeg', quality: 0.999 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } // Configurações do jsPDF
+                };
+
+                // 1. Seleciona o elemento a ser convertido
+                // 2. Aplica as opções
+                // 3. Chama o método .save() para iniciar o download
+                html2pdf().set(opcoes).from(elemento).outputPdf('arraybuffer').then(async (pdfBytes) => {
+                    const center = (page, text, x, y, size, font) => {
+                        const widthText = font.widthOfTextAtSize(text, size)
+                        const props = {
+                            x: x - widthText / 2,
+                            y: y,
+                            size,
+                            font,
+                        }
+                        page.drawText(text, props)
+
+                    }
+                    const right = (page, text, { x, y, size, font, color }) => {
+                        const widthText = font.widthOfTextAtSize(text, size)
+                        const props = {
+                            x: page.getWidth() - x - widthText,
+                            y: y,
+                            size,
+                            font,
+                            color
+                        }
+                        page.drawText(text, props)
+                    }
+                    console.log('Sucesso!', pdfBytes);
+                    const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+                    const pages = pdfDoc.getPages();
+
+                    // Opcional: Para usar fontes padrão (mais fácil)
+                    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+                    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+                    const numPages = pages.length;
+
+                    const headerText = 'Gerado por Inteligência Artificial';
+                    const fontSize = 10;
+                    const yPosition = pages[0].getHeight() - 15; // Posição Y (15mm do topo)
+                    const marginX = 20; // Margem lateral
+
+                    try {
+
+                        // Itera sobre cada página
+                        for (let i = 0; i < numPages; i++) {
+                            const page = pages[i];
+                            const { width, height } = page.getSize();
+                            const pageNumber = i + 1;
+
+
+
+                            const jpgUrl = 'http://localhost:5173/logo_white.jpg'
+                            const jpgImageBytes = await fetch(jpgUrl).then((res) => res.arrayBuffer())
+
+                            const jpgImage = await pdfDoc.embedJpg(jpgImageBytes)
+                            const jpgDims = jpgImage.scale(0.1)
+                            console.log(jpgDims)
+
+                            page.drawImage(jpgImage, {
+                                x: 25,
+                                y: page.getHeight() - 80,
+                                width: jpgDims.width,
+                                height: jpgDims.height,
+                                opacity: 1,
+                            })
+
+                            page.drawText('GFIC', {
+                                font: fontBold,
+                                size: 50,
+                                x: 115,
+                                y: page.getHeight() - 70,
+                                color: rgb(0.5, 0.5, 0.55)
+                            })
+
+                            right(page, 'Análise Detalhada', {
+                                x: 20,
+                                y: page.getHeight() - 45,
+                                size: 20,
+                                font: fontBold,
+                                color: rgb(0.5, 0.5, 0.55)
+                            })
+                            right(page, 'Análise Gerada em: ' + date.toLocaleString('pt-BR'), {
+                                x: 20,
+                                y: page.getHeight() - 60,
+                                size: 10,
+                                font,
+                                color: rgb(0.5, 0.5, 0.55)
+                            })
+                            right(page, 'Validade Recomendada de 24 Horas', {
+                                x: 20,
+                                y: page.getHeight() - 70,
+                                size: 8,
+                                font,
+                                color: rgb(0.5, 0.5, 0.55)
+                            })
+
+                            // Texto da Página (no lado direito)
+                            const pageInfo = `Página ${pageNumber} de ${numPages}`;
+                            const pageInfoWidth = fontBold.widthOfTextAtSize(pageInfo, fontSize);
+
+                            // Desenha o cabeçalho (Texto Fixo)
+                            page.drawText(headerText, {
+                                x: marginX,
+                                y: 17,
+                                size: fontSize,
+                                font: fontBold,
+                                color: rgb(0.3, 0.3, 0.3), // Cor cinza
+                            });
+
+                            // Desenha a numeração de página (no lado esquerdo)
+                            page.drawText(pageInfo, {
+                                x: width - marginX - pageInfoWidth, // Calcula a posição para alinhar à direita
+                                y: 17,
+                                size: fontSize,
+                                font: fontBold,
+                                color: rgb(0.3, 0.3, 0.3),
+                            });
+
+                            // Desenha a linha divisória (opcional)
+                            page.drawLine({
+                                start: { x: marginX, y: 30 },
+                                end: { x: width - marginX, y: 30 },
+                                thickness: 0.5,
+                                color: rgb(0.7, 0.7, 0.7),
+                            });
+                        }
+
+                        let lastPage = pages[pages.length - 1];
+                        lastPage.drawText('Este documento é gerado por inteligência articial, logo só deve ser utilizado para referência e todos os dados precisam ser verificados antes de qualquer investimento realizado.', {
+                            x: marginX,
+                            maxWidth:lastPage.getWidth() - (marginX * 2),
+                            y: 55,
+                            lineHeight:10,
+                            size: 10,
+                            font: font,
+                            color: rgb(0.3, 0.3, 0.3), // Cor cinza
+                        });
+
+                        // ----------------------------------------------------
+                        // 3. Salva e Exibe o PDF Modificado
+                        // ----------------------------------------------------
+                        const pdfModificadoBytes = await pdfDoc.save();
+                        // Cria um Blob (objeto de arquivo) e exibe em uma nova aba
+                        const blob = new Blob([pdfModificadoBytes], { type: 'application/pdf' });
+                        const url = URL.createObjectURL(blob);
+                        window.open(url, '_blank');
+                    } catch (error) {
+                        console.error(error);
+                    }
+
+
+
+                }, (error) => { console.error('Erro ao Gerar: ', error) })
+
+            }
+            window.addEventListener('keyup', (e) => {
+                if (e.key == 'f') {
+                    window.gerarPdf(false);
+                }
+            })
+        });
+    </script>
+
+</body>
+
+</html>
