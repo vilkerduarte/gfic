@@ -89,6 +89,23 @@ model assets {
   @@unique([symbol, fullExchangeName, type], map: "symbol")
 }
 
+
+model stocks {
+  id                Int     @id @default(autoincrement())
+  currency          String? @db.Text
+  name              String? @db.Text
+  symbol            String? @db.Text
+  mic               String? @db.Text
+  figi              String? @db.Text
+  type              String? @db.Text
+  close             BigInt?
+  change            BigInt?
+  volume            BigInt?
+  market_cap        BigInt?
+  sector            String? @db.Text
+  logo              String? @db.Text
+}
+
 model credits {
   id          Int       @id @default(autoincrement())
   user_id     Int
