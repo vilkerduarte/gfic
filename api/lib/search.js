@@ -4,43 +4,23 @@ import { markdownToPdf } from './markdown-pdf.js';
 import { analyzeStockData } from './analysis.js';
 import fs from 'fs';
 import prisma from './prisma.js';
+import {
+  fetchHistoricalDataBySymbol,
+  hydrateStocksWithPrices
+} from './market-data.js';
 
 export async function getStockList(BR = false) {
-    async function fetchList(BR = false) {
-        try {
-            let { data } = await axios.get(`https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved?count=250&formatted=true&scrIds=MOST_ACTIVES&sortField=&sortType=&start=0&useRecordsResponse=false&fields=symbol%2CshortName&lang=pt-BR&region=BR${BR ? '&marketRegion=BR' : ''}`)
-            return data.finance.result[0].quotes;
-        } catch (error) {
-            return false;
-        }
-    }
-    const pathName = `.cache/stock${BR ? '.br' : ''}.json`
-    async function writeList() {
-        let data = await fetchList(BR);
-        if (data) {
-            try {
-                fs.mkdirSync('.cache');
-            } catch (error) {
-            }
-
-            fs.writeFileSync(pathName, JSON.stringify({ created: Date.now(), data }, null, 2));
-            return data;
-        } else {
-            return false;
-        }
-    }
-    if (!fs.existsSync(pathName)) {
-        return await writeList();
-    } else {
-
-        let cache = fs.readFileSync(pathName, 'utf-8');
-        cache = JSON.parse(cache);
-        if (cache.created < (Date.now() - (3 * 3600 * 1000))) {
-            return await writeList();
-        } else {
-            return cache.data;
-        }
-    }
+    const where = BR ? { mic: 'BVMF' } : {}
+    const list = await prisma.stocks.findMany({
+        where,
+        orderBy: [
+            { volume: 'desc' },
+            { market_cap: 'desc' },
+            { id: 'desc' }
+        ],
+        take: 60
+    })
+    return hydrateStocksWithPrices(list)
 }
 
 const textPlainPrompt = 'Me dê o resultado em texto pleno e corrido para ser inserido em um relatório de intenção de investimento.'
@@ -102,11 +82,8 @@ export default class StockAnalyzer {
         console.log('📊 Coletando dados da ação...');
 
         try {
-            // Dados da NYSE
-            const nyseUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`;
-            const nyseResponse = await axios.get(nyseUrl);
-
-            const analises = analyzeStockData(nyseResponse.data);
+            const series = await fetchHistoricalDataBySymbol(symbol);
+            const analises = analyzeStockData(series);
             this.researchData.stockInfo = analises;
 
         } catch (error) {

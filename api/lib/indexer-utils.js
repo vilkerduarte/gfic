@@ -5,8 +5,8 @@ import fs from 'fs';
 import Brapi from 'brapi';
 import prisma from './prisma.js';
 
-const finnhubClient = new finnhub.DefaultApi(process.env.FINNHUB_API_KEY)
-const client = new Brapi({
+export const finnhubClient = new finnhub.DefaultApi(process.env.FINNHUB_API_KEY)
+export const brapiClient = new Brapi({
     apiKey: process.env.BRAPI_API_KEY,
     environment: 'production', // 'production' ou 'sandbox'
     maxRetries: 2, // Número de tentativas (padrão: 2)
@@ -194,7 +194,7 @@ export async function fetchUS() {
     })
 }
 export async function fetchBR() {
-    const quote = await client.quote.list();
+    const quote = await brapiClient.quote.list();
     if (quote && quote.stocks) {
         return quote.stocks;
     }
@@ -203,7 +203,7 @@ export async function fetchBR() {
 export async function fetchCrypto(moedas = false) {
     if (!moedas || !moedas.length) {
         moedas = [];
-        const list = await client.v2.crypto.listAvailable();
+        const list = await brapiClient.v2.crypto.listAvailable();
         if (list && list.coins) {
             moedas = list.coins;
         }
@@ -215,7 +215,7 @@ export async function fetchCrypto(moedas = false) {
         lote.push(m);
         if (lote.length == 10) {
             console.log(lote.join(','));
-            let quotes = await client.v2.crypto.retrieve({
+            let quotes = await brapiClient.v2.crypto.retrieve({
                 coin: lote.join(','),
                 currency: 'BRL'
             });
@@ -228,7 +228,7 @@ export async function fetchCrypto(moedas = false) {
     }
     if (lote.length) {
         console.log(lote.join(','));
-        let quotes = await client.v2.crypto.retrieve({
+        let quotes = await brapiClient.v2.crypto.retrieve({
             coin: lote.join(','),
             currency: 'BRL'
         });

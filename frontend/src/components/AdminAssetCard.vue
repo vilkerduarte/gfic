@@ -9,7 +9,7 @@
                     <!-- <Avatar v-if="showLogo" @error="showLogo = false" :image="logoUrl" class="mr-2 p-1 shadow" style="background-color: white" size="xlarge" shape="square" /> -->
                     <LogoAsset :src="logoUrl" :size="50" />
                     <div>
-                        <h3 class="font-semibold text-sm">{{ asset.shortName }}</h3>
+                        <h3 class="font-semibold text-sm">{{ asset.name || asset.symbol }}</h3>
                         <p class="text-xs text-gray-300">{{ asset.symbol }}</p>
                     </div>
                 </div>
@@ -44,7 +44,12 @@ const toast = useToast()
 const bookmarkLoading = ref(false)
 
 // URL da logo
-const logoUrl = computed(() => API.HOST + `/files/logo/${props.asset.symbol}.svg`)
+const logoUrl = computed(() => {
+    if (props.asset.logo) {
+        return props.asset.logo.startsWith('http') ? props.asset.logo : `${API.HOST}${props.asset.logo}`
+    }
+    return API.HOST + `/files/logo/${props.asset.symbol}.svg`
+})
 
 // Métodos
 const handleBookmarkClick = async () => {

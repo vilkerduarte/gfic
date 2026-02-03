@@ -4,31 +4,29 @@ import axios from 'axios';
 // MOST_ACTIVES_ETFS
 const prisma = new PrismaClient()
 async function main2() {
-    let list = await prisma.assets.findMany();
+    let list = await prisma.stocks.findMany();
     for (let x = 0; x < list.length; x++) {
-        const { symbol, shortName, id, longName } = list[x];
-        let name = shortName || longName || null;
+        const { symbol, name, id } = list[x];
         if (!name) {
             console.log(`Sem nome em: ${symbol} no ID ${id}`);
         } else {
-            let image = `/files/logo/${symbol}.svg?q=${(shortName || longName).replaceAll(' ', '+').replaceAll('.', '').replaceAll(',', '') || ''}`
-            await prisma.assets.update({
+            let image = `/files/logo/${symbol}.svg?q=${name.replaceAll(' ', '+').replaceAll('.', '').replaceAll(',', '') || ''}`
+            await prisma.stocks.update({
                 where: { id },
-                data: { image }
+                data: { logo: image }
             });
         }
     }
 }
 
 async function main() {
-    let list = await prisma.assets.findMany();
+    let list = await prisma.stocks.findMany();
     async function executeTime(x){
         process.stdout.write(`\rExecutando: ${x}`);
         if(x >= list.length){
             return;
         }
-        const { symbol, shortName, id, longName } = list[x];
-        let name = shortName || longName || null;
+        const { symbol, name, id } = list[x];
         if (!name) {
             console.log(`Sem nome em: ${symbol} no ID ${id}`);
         } else {

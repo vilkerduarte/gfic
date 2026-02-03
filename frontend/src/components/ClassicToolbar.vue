@@ -125,7 +125,7 @@ const addAsset = async (asset) => {
     try {
         const response = await API.post('/assets/my-assets', {
             symbol: asset.symbol,
-            name: asset.longName || asset.shortName,
+            name: asset.name || asset.symbol,
             data: asset
         })
 

@@ -21,7 +21,17 @@
     </div>
 
     <!-- Conteúdo -->
-    <div class="relative h-[90px] mt-4">
+    <div class="px-4 py-2 flex items-center justify-between bg-slate-900 border-y border-slate-700">
+      <div class="text-xs text-gray-400">Preço</div>
+      <div class="text-right">
+        <div class="text-sm font-semibold">{{ formatCurrency(asset.data?.priceMetrics?.currentPrice) }}</div>
+        <div :class="['text-xs', priceChangeClass]">
+          {{ formatPercent(asset.data?.priceMetrics?.priceChangePercent) }}
+        </div>
+      </div>
+    </div>
+
+    <div class="relative h-[90px] mt-2">
       <!-- Resumo e Tendência -->
       <button @click="openMore = !openMore" :class="`absolute transition cursor-pointer hover:bg-blue-600 rounded-full bottom-2 text-center inset-x-32 shadow z-[100] text-[9pt] ${openMore ? 'bg-blue-600' : 'bg-slate-600'}`"><i :class="`pi-angle-double-down pi transition-all ${openMore ? 'rotate-180' : ' rotate-0'}`" style="font-size: 0.7rem;"></i> {{ openMore ? 'Ver Menos' : 'Ver Mais'}}</button>
       <div class="space-y-4 absolute z-10 transition-[all] duration-[1s] inset-x-0 px-4 pb-6 rounded-b-xl shadow overflow-hidden bg-slate-800" :style="`max-height: ${openMore ? '1000px' : '75px'}`">

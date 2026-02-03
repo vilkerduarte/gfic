@@ -3,19 +3,25 @@ import path from 'path'
 import fs from 'fs'
 import { authenticateToken, optionalAuth } from '../../middleware/authentication.js'
 import StockAnalyzer from '../../lib/search.js'
-import axios from 'axios'
 import prisma from '../../lib/prisma.js'
 import { generateUUID } from '../../lib/utils.js'
 import Admin from '../../lib/manager.js'
 import { Worker } from 'node:worker_threads'
+import {
+  fetchHistoricalDataForStock,
+  findStockBySymbol
+} from '../../lib/market-data.js'
+import { analyzeStockData } from '../../lib/analysis.js'
 
 const router = Router()
 router.get('/verify/:symbol', optionalAuth, async(req, res) => {
     const { symbol } = req.params
     try {
-      let busca = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`);
-      
-      res.status(200).json(busca.data);
+      const stock = await findStockBySymbol(symbol)
+      if (!stock) return res.status(404).json({ message:'Not Found' })
+      const series = await fetchHistoricalDataForStock(stock)
+      const snapshot = analyzeStockData(series)
+      res.status(200).json(snapshot);
     } catch (error) {
       res.status(404).json({message:'Not Found'})
     }
@@ -26,7 +32,9 @@ router.get('/create/:symbol', authenticateToken, async(req, res) => {
     console.log(symbol);
     if(req.user.balance){
       try {
-        let busca = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`);
+        const stock = await findStockBySymbol(symbol)
+        if (!stock) return res.status(404).json({message:'Not Found'})
+        await fetchHistoricalDataForStock(stock) // valida disponibilidade de dados
         const analisador = new StockAnalyzer();
         let item = await prisma.reports.create({
           data:{

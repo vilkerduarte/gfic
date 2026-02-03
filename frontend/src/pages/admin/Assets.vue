@@ -15,8 +15,8 @@
         <div v-for="asset in assets" :key="asset.id" class="border border-slate-700 rounded p-3 flex items-center justify-between hover:border-primary-500">
           <div>
             <p class="font-semibold">{{ asset.symbol }}</p>
-            <p class="text-sm text-slate-300">{{ asset.shortName || asset.longName }}</p>
-            <p class="text-xs text-slate-400">Logo: {{ asset.image ? 'sim' : 'nao' }}</p>
+            <p class="text-sm text-slate-300">{{ asset.name }}</p>
+            <p class="text-xs text-slate-400">Logo: {{ hasLogo(asset) ? 'sim' : 'nao' }}</p>
           </div>
           <Button label="Editar" size="small" icon="pi pi-pencil" outlined @click="selectAsset(asset)" />
         </div>
@@ -33,7 +33,7 @@
       <div v-if="!selected" class="text-slate-400 text-sm">Selecione um asset para editar a logo.</div>
       <div v-else class="space-y-3">
         <p class="text-sm text-slate-300">Symbol: {{ selected.symbol }}</p>
-        <div v-if="selected.image" class="space-y-2">
+        <div v-if="hasLogo(selected)" class="space-y-2">
           <p class="text-sm">Logo atual:</p>
           <img :src="imageUrl" alt="logo" class="h-20 bg-white p-2 rounded" />
           <Button label="Remover logo" icon="pi pi-trash" severity="danger" size="small" @click="removeLogo" />
@@ -62,16 +62,27 @@ const showAssetModal = ref(false)
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / perPage)))
 const imageUrl = computed(() => {
-  if (!selected.value?.image) return ''
-  return selected.value.image.startsWith('http') ? selected.value.image : `${API.HOST}${selected.value.image}`
+  const path = selected.value?.logo || selected.value?.image
+  if (!path) return ''
+  return path.startsWith('http') ? path : `${API.HOST}${path}`
 })
 
 const withImageHost = (asset) => {
   if (!asset) return asset
-  if (asset.image && !asset.image.startsWith('http')) {
-    asset.image = `${API.HOST}${asset.image}`
+  const logoPath = asset.logo || asset.image
+  if (logoPath && !logoPath.startsWith('http')) {
+    asset.logo = `${API.HOST}${logoPath}`
+    asset.image = asset.logo
+  } else if (logoPath) {
+    asset.logo = logoPath
+    asset.image = logoPath
   }
   return asset
+}
+
+const hasLogo = (asset) => {
+  if (!asset) return false
+  return Boolean(asset.logo || asset.image)
 }
 
 const fetchAssets = async () => {
@@ -97,7 +108,9 @@ const uploadLogo = async (event) => {
   formData.append('logo', file)
   const resp = await API.upload(`/admin/assets/${selected.value.symbol}/logo`, formData)
   if (resp?.image) {
-    selected.value.image = resp.image.startsWith('http') ? resp.image : `${API.HOST}${resp.image}`
+    const path = resp.image.startsWith('http') ? resp.image : `${API.HOST}${resp.image}`
+    selected.value.logo = path
+    selected.value.image = path
     fetchAssets()
   }
   event.target.value = ''
@@ -107,6 +120,7 @@ const removeLogo = async () => {
   if (!selected.value) return
   const resp = await API.delete(`/admin/assets/${selected.value.symbol}/logo`)
   if (resp) {
+    selected.value.logo = null
     selected.value.image = null
     fetchAssets()
   }

@@ -98,9 +98,13 @@ export default class API{
             return false;   
         }
     }
-    static async getHomeList(region=''){
-        let results = await API.get(`/assets?region=${region}`);
-        return results;
+    static async getHomeList(region='', page=1, type=''){
+        const params = new URLSearchParams()
+        if (region) params.append('region', region)
+        if (page) params.append('page', page)
+        if (type) params.append('type', type)
+        const query = params.toString() ? `?${params.toString()}` : ''
+        return await API.get(`/assets${query}`);
     }
     static async getConfigs(){
         let results = await API.get(`/app/configs`);

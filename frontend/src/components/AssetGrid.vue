@@ -74,7 +74,6 @@ import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
 import Button from 'primevue/button'
 import AssetCard from './AssetCard.vue'
-import { includes } from 'zod'
 
 const auth = inject('auth');
 
@@ -94,7 +93,7 @@ const itemsPerPage = 12
 
 // Computed properties
 const exchangeOptions = computed(() => {
-  const exchanges = [...new Set(props.assets.map(asset => asset.fullExchangeName))]
+  const exchanges = [...new Set(props.assets.map(asset => asset.exchange || asset.mic))].filter(Boolean)
   return exchanges.map(exchange => ({
     label: exchange,
     value: exchange
@@ -108,7 +107,7 @@ const filteredAssets = computed(() => {
   if (searchTerm.value) {
     const term = searchTerm.value.toLowerCase()
     filtered = filtered.filter(asset => 
-      asset.shortName?.toLowerCase().includes(term) ||
+      asset.name?.toLowerCase().includes(term) ||
       asset.symbol?.toLowerCase().includes(term)
     )
   }
@@ -116,7 +115,7 @@ const filteredAssets = computed(() => {
   // Filtro por exchange
   if (selectedExchange.value) {
     filtered = filtered.filter(asset => 
-      asset.fullExchangeName === selectedExchange.value
+      (asset.exchange || asset.mic) === selectedExchange.value
     )
   }
 

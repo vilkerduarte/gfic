@@ -32,9 +32,9 @@ const logosDir = path.join(process.cwd(), 'assets', 'logos')
 const findAsset = async (identifier) => {
   const idNumber = parseInt(identifier)
   if (!isNaN(idNumber)) {
-    return prisma.assets.findUnique({ where: { id: idNumber } })
+    return prisma.stocks.findUnique({ where: { id: idNumber } })
   }
-  return prisma.assets.findFirst({ where: { symbol: normalizeSymbol(identifier) } })
+  return prisma.stocks.findFirst({ where: { symbol: normalizeSymbol(identifier) } })
 }
 
 router.get('/', async (req, res) => {
@@ -49,8 +49,8 @@ router.get('/', async (req, res) => {
     if (q) {
       orFilters.push(
         { symbol: { contains: q } },
-        { longName: { contains: q } },
-        { shortName: { contains: q } }
+        { name: { contains: q } },
+        { sector: { contains: q } }
       )
     }
 
@@ -59,8 +59,8 @@ router.get('/', async (req, res) => {
     }
 
     const [total, list] = await Promise.all([
-      prisma.assets.count({ where }),
-      prisma.assets.findMany({
+      prisma.stocks.count({ where }),
+      prisma.stocks.findMany({
         where,
         orderBy: { id: 'desc' },
         skip: (page - 1) * perPage,
@@ -68,7 +68,8 @@ router.get('/', async (req, res) => {
       })
     ])
 
-    res.json({ list, total, page, perPage })
+    const mapped = list.map((item) => ({ ...item, image: item.logo }))
+    res.json({ list: mapped, total, page, perPage })
   } catch (error) {
     console.error('Erro ao listar assets:', error)
     res.status(500).json({ error: 'Erro interno do servidor' })
@@ -79,7 +80,7 @@ router.get('/:id', async (req, res) => {
   try {
     const asset = await findAsset(req.params.id)
     if (!asset) return res.status(404).json({ error: 'Ativo nao encontrado' })
-    res.json({ asset })
+    res.json({ asset: { ...asset, image: asset.logo } })
   } catch (error) {
     console.error('Erro ao buscar asset:', error)
     res.status(500).json({ error: 'Erro interno do servidor' })
@@ -91,7 +92,7 @@ router.post('/:symbol/logo', upload.single('logo'), async (req, res) => {
     const symbol = normalizeSymbol(req.params.symbol)
     if (!req.file) return res.status(400).json({ error: 'Arquivo nao enviado' })
 
-    const asset = await prisma.assets.findFirst({ where: { symbol } })
+    const asset = await prisma.stocks.findFirst({ where: { symbol } })
     if (!asset) return res.status(404).json({ error: 'Ativo nao encontrado' })
 
     const ext = path.extname(req.file.originalname).toLowerCase()
@@ -108,9 +109,9 @@ router.post('/:symbol/logo', upload.single('logo'), async (req, res) => {
     await fsPromises.writeFile(filePath, req.file.buffer)
 
     const imagePath = `/files/logo/${filename}`
-    await prisma.assets.update({
+    await prisma.stocks.update({
       where: { id: asset.id },
-      data: { image: imagePath }
+      data: { logo: imagePath }
     })
 
     res.json({ message: 'Logo atualizada', image: imagePath })
@@ -123,7 +124,7 @@ router.post('/:symbol/logo', upload.single('logo'), async (req, res) => {
 router.delete('/:symbol/logo', async (req, res) => {
   try {
     const symbol = normalizeSymbol(req.params.symbol)
-    const asset = await prisma.assets.findFirst({ where: { symbol } })
+    const asset = await prisma.stocks.findFirst({ where: { symbol } })
     if (!asset) return res.status(404).json({ error: 'Ativo nao encontrado' })
 
     const files = fs.existsSync(logosDir) ? await fsPromises.readdir(logosDir) : []
@@ -132,9 +133,9 @@ router.delete('/:symbol/logo', async (req, res) => {
       .map(f => fsPromises.unlink(path.join(logosDir, f)))
     await Promise.allSettled(removals)
 
-    await prisma.assets.update({
+    await prisma.stocks.update({
       where: { id: asset.id },
-      data: { image: null }
+      data: { logo: null }
     })
 
     res.json({ message: 'Logo removida' })

@@ -7,9 +7,9 @@ const prisma = new PrismaClient()
 
 const ass = {}
 async function main2() {
-    let list = await prisma.assets.findMany();
+    let list = await prisma.stocks.findMany();
     for (let x = 0; x < list.length; x++) {
-        const { symbol, shortName, id, longName } = list[x];
+        const { symbol, name, id } = list[x];
         process.stdout.write(`\rExecutando: ${x}`);
         let pathFile = `assets/logos/${symbol}.svg`;
         if (fs.existsSync(pathFile)) {
@@ -24,12 +24,11 @@ async function main2() {
     fs.writeFileSync('ass.json',JSON.stringify(ass,null,2));
 }
 async function main() {
-    let list = await prisma.assets.findMany();
+    let list = await prisma.stocks.findMany();
     for (let x = 0; x < list.length; x++) {
         process.stdout.write(`\rExecutando: ${x}`);
-        const { symbol, shortName, id, longName } = list[x];
-        const name = shortName || longName || '';
-        ass[symbol] = name;
+        const { symbol, name } = list[x];
+        ass[symbol] = name || '';
     }
     fs.writeFileSync('ass.json',JSON.stringify(ass,null,2));
 }

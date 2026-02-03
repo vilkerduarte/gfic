@@ -1,189 +1,266 @@
-// routes/assets/add-remove.js
 import { Router } from 'express'
-import axios from 'axios';
 import { generateUUID } from '../lib/utils.js'
-import { analyzeStockData } from '../lib/analysis.js';
-import { authenticateToken, optionalAuth } from '../middleware/authentication.js'
-import StockAnalyzer, { getStockList } from '../lib/search.js'
+import { analyzeStockData } from '../lib/analysis.js'
+import {
+  authenticateToken,
+  optionalAuth
+} from '../middleware/authentication.js'
 import prisma from '../lib/prisma.js'
+import {
+  findStockBySymbol,
+  fetchHistoricalDataForStock,
+  hydrateStocksWithPrices,
+  searchExternalStocks
+} from '../lib/market-data.js'
 
 const router = Router()
 
-// Adicionar asset aos meus assets
-router.post('/my-assets', authenticateToken, async (req, res) => {
-    try {
-        const { symbol, name } = req.body
+const typeCache = new Map() // key: region, value: {ts, types}
+const CACHE_TTL_MS = 60 * 60 * 1000
 
-        let { data } = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`);
-        console.log(data.chart.result[0].meta);
-        data = analyzeStockData(data);
-
-        console.log(symbol, symbol.toUpperCase())
-
-        const userId = req.user.id
-
-        if (!symbol) {
-            return res.status(400).json({ error: 'Símbolo é obrigatório' })
-        }
-
-
-        // Verificar se já existe
-        const existingAsset = await prisma.my_assets.findFirst({
-            where: {
-                user_id: userId,
-                symbol: symbol.toUpperCase()
-            }
-        })
-
-        if (existingAsset) {
-            return res.status(409).json({ error: 'Asset já está na sua lista' })
-        }
-
-        // Criar asset
-        const asset = await prisma.my_assets.create({
-            data: {
-                symbol: symbol.toUpperCase(),
-                name: name || symbol,
-                data: data || {},
-                user_id: userId,
-                hash: generateUUID()
-            }
-        })
-
-
-        res.status(201).json({
-            success: true,
-            message: 'Asset adicionado com sucesso',
-            asset
-        })
-
-    } catch (error) {
-        console.error('Erro ao adicionar asset:', error)
-        res.status(500).json({ error: 'Erro interno do servidor' })
-    }
-})
-
-// Remover asset dos meus assets
-router.delete('/my-assets/:symbol', authenticateToken, async (req, res) => {
-    try {
-        const { symbol } = req.params
-        const userId = req.user.id
-
-        console.log(req.url, symbol)
-
-        if (!symbol) {
-            return res.status(400).json({ error: 'Símbolo é obrigatório' })
-        }
-
-        // Verificar se existe
-        const existingAsset = await prisma.my_assets.findFirst({
-            where: {
-                user_id: userId,
-                symbol: symbol.toUpperCase()
-            }
-        })
-
-        if (!existingAsset) {
-            return res.status(404).json({ error: 'Asset não encontrado na sua lista' })
-        }
-
-        // Remover asset
-        await prisma.my_assets.delete({
-            where: { id: existingAsset.id }
-        })
-
-        res.json({
-            success: true,
-            message: 'Asset removido com sucesso'
-        })
-
-    } catch (error) {
-        console.error('Erro ao remover asset:', error)
-        res.status(500).json({ error: 'Erro interno do servidor' })
-    }
-})
-function format(dados) {
-    return {
-        currency: dados.currency || null,
-        symbol: dados.symbol || null,
-        exchangeName: dados.exchange || null,
-        type: dados.typeDisp || 'Ação',
-        fullExchangeName: dados.exchDisp || null,
-        instrumentType: dados.quoteType || null,
-        gmtoffset: dados.gmtoffset || null, // Não disponível no novo formato
-        timezone: dados.timezone || null, // Não disponível no novo formato
-        exchangeTimezoneName: dados.exchangeTimezoneName || null, // Não disponível no novo formato
-        longName: dados.longname || dados.shortname || null,
-        market: dados.market || null, // Não disponível no novo formato
-        shortName: dados.shortname || null,
-        image: `/files/logo/${dados.symbol}.svg?q=${encodeURI(dados.longname || dados.shortname || '')}`
-    }
+function buildRegionWhere(region) {
+  const r = (region || '').toLowerCase()
+  if (r === 'br') {
+    return { currency: 'BRL', NOT: { type: 'CRYPTO' } }
+  }
+  if (r === 'us') {
+    return { currency: 'USD', NOT: { type: 'CRYPTO' } }
+  }
+  if (r === 'crypto') {
+    return { type: 'CRYPTO' }
+  }
+  return {}
 }
+
+async function getCachedTypes(region) {
+  const key = (region || 'all').toLowerCase()
+  const cached = typeCache.get(key)
+  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+    return cached.types
+  }
+
+  const where = buildRegionWhere(region)
+  const rows = await prisma.stocks.findMany({
+    where,
+    distinct: ['type'],
+    select: { type: true }
+  })
+  const types = rows
+    .map((r) => r.type)
+    .filter(Boolean)
+    .sort()
+
+  typeCache.set(key, { ts: Date.now(), types })
+  return types
+}
+
 router.get('/', async (req, res) => {
-    let { region } = req.query;
-    let dados = await getStockList(region && region.toLowerCase() == 'br' ? true : false);
-    res.status(200).json(dados);
-});
-router.get('/search', optionalAuth, async (req, res) => {
-    const { q } = req.query
-    let busca = await prisma.assets.findMany({
-        where: {
-            OR: [
-                { symbol: { startsWith: q } },
-                { shortName: { contains: q } },
-                { longName: { contains: q } }
-            ]
-        }, take: 6
-    });
-    if (!busca || busca.length < 1) {
-        try {
-            busca = await axios.get(`https://query2.finance.yahoo.com/v1/finance/search?q=${q}&lang=pr-BR&region=BR&quotesCount=6&newsCount=3&listsCount=2&enableFuzzyQuery=false&quotesQueryId=tss_match_phrase_query&multiQuoteQueryId=multi_quote_single_token_query&newsQueryId=news_cie_vespa&enableCb=false&enableNavLinks=true&enableEnhancedTrivialQuery=true&enableResearchReports=true&enableCulturalAssets=true&enableLogoUrl=true&enableLists=false&recommendCount=5`);
-            busca = busca.data.quotes.map(a => format(a));
-        } catch (error) {
-        }
-    }
-    //   let busca = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`);
-    res.status(200).json(busca || []);
+  try {
+    const region = req.query.region || 'all'
+    const page = Math.max(parseInt(req.query.page) || 1, 1)
+    const perPage = Math.max(Math.min(parseInt(req.query.perPage) || 12, 100), 1)
+    const type = req.query.type
 
-});
-router.get('/my-assets', authenticateToken, async (req, res) => {
-    let { q, page } = req.query
-    page = page ? parseInt(page) : 1;
     const where = {
-        OR: [
-            { symbol: { startsWith: q } },
-            { name: { contains: q } },
-            { data: { string_contains: q } }
+      ...buildRegionWhere(region),
+      ...(type ? { type } : {})
+    }
+
+    const [total, list, types] = await Promise.all([
+      prisma.stocks.count({ where }),
+      prisma.stocks.findMany({
+        where,
+        orderBy: [
+          { volume: 'desc' },
+          { market_cap: 'desc' },
+          { id: 'desc' }
         ],
-        user_id: req.user.id,
+        skip: (page - 1) * perPage,
+        take: perPage
+      }),
+      getCachedTypes(region)
+    ])
 
+    const payload = await hydrateStocksWithPrices(list)
+    return res.status(200).json({
+      list: payload,
+      page,
+      perPage,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / perPage)),
+      types
+    })
+  } catch (error) {
+    console.error('Erro ao listar assets:', error)
+    return res.status(500).json({ error: 'Erro interno do servidor' })
+  }
+})
+
+router.get('/search', optionalAuth, async (req, res) => {
+  try {
+    const { q } = req.query
+    if (!q || !q.trim()) return res.status(200).json([])
+
+    const where = {
+      OR: [
+        { symbol: { startsWith: q.toUpperCase() } },
+        { name: { contains: q } },
+        { sector: { contains: q } }
+      ]
     }
-    let busca = await prisma.my_assets.findMany({
-        where, take: 20, skip: ((page - 1) * 20)
-    });
-    let ids = busca.map(a => a.symbol);
 
+    const dbResults = await prisma.stocks.findMany({
+      where,
+      take: 10,
+      orderBy: [
+        { volume: 'desc' },
+        { market_cap: 'desc' }
+      ]
+    })
+
+    let formatted = await hydrateStocksWithPrices(dbResults)
+
+    if (formatted.length < 6) {
+      const external = await searchExternalStocks(q, 8)
+      const already = new Set(formatted.map((a) => a.symbol))
+      formatted = [
+        ...formatted,
+        ...external.filter((e) => !already.has(e.symbol)).slice(0, 8)
+      ]
+    }
+
+    return res.status(200).json(formatted)
+  } catch (error) {
+    console.error('Erro ao buscar assets:', error)
+    return res.status(500).json({ error: 'Erro interno do servidor' })
+  }
+})
+
+router.get('/my-assets', authenticateToken, async (req, res) => {
+  try {
+    let { q, page } = req.query
+    page = page ? parseInt(page) : 1
+
+    const orFilters = q
+      ? [
+          { symbol: { startsWith: q.toUpperCase() } },
+          { name: { contains: q } },
+          { data: { string_contains: q } }
+        ]
+      : null
+
+    const where = {
+      user_id: req.user.id,
+      ...(orFilters ? { OR: orFilters } : {})
+    }
+
+    let list = await prisma.my_assets.findMany({
+      where,
+      take: 20,
+      skip: (page - 1) * 20
+    })
+
+    const ids = list.map((a) => a.symbol)
+    let repo = {}
     if (ids.length) {
-        let repo = {}
-        let reports = await prisma.reports.findMany({
-            where: {
-                user_id: req.user.id,
-                status: { in: ['active', 'pending'] },
-                symbol: { in: ids }
-            },
-            orderBy: {
-                id: 'asc'
-            }
-        })
-        reports = reports.map((r) => {
-            repo[r.symbol] = r;
-            return r;
-        });
-        busca = busca.map(a => {
-            return { ...a, report: repo[a.symbol] || null }
-        });
+      const reports = await prisma.reports.findMany({
+        where: {
+          user_id: req.user.id,
+          status: { in: ['active', 'pending'] },
+          symbol: { in: ids }
+        },
+        orderBy: { id: 'asc' }
+      })
+      reports.forEach((r) => {
+        repo[r.symbol] = r
+      })
+      list = list.map((item) => ({
+        ...item,
+        report: repo[item.symbol] || null
+      }))
     }
-    let num = await prisma.my_assets.count({ where });
-    res.status(200).json({ total_pages: Math.ceil(num / 20), total_items: num, page, list: busca || [] });
-});
+
+    const num = await prisma.my_assets.count({ where })
+    return res.status(200).json({
+      total_pages: Math.ceil(num / 20),
+      total_items: num,
+      page,
+      list
+    })
+  } catch (error) {
+    console.error('Erro ao listar meus assets:', error)
+    return res.status(500).json({ error: 'Erro interno do servidor' })
+  }
+})
+
+router.post('/my-assets', authenticateToken, async (req, res) => {
+  try {
+    const { symbol } = req.body
+    const userId = req.user.id
+
+    if (!symbol) {
+      return res.status(400).json({ error: 'Símbolo é obrigatório' })
+    }
+
+    const existingAsset = await prisma.my_assets.findFirst({
+      where: { user_id: userId, symbol: symbol.toUpperCase() }
+    })
+    if (existingAsset) {
+      return res.status(409).json({ error: 'Asset já está na sua lista' })
+    }
+
+    const stock = await findStockBySymbol(symbol)
+    if (!stock) {
+      return res.status(404).json({ error: 'Ativo não encontrado na base' })
+    }
+
+    const series = await fetchHistoricalDataForStock(stock)
+    const analyzed = analyzeStockData(series)
+
+    const asset = await prisma.my_assets.create({
+      data: {
+        symbol: stock.symbol,
+        name: stock.name || stock.symbol,
+        data: analyzed || {},
+        user_id: userId,
+        hash: generateUUID()
+      }
+    })
+
+    return res.status(201).json({
+      success: true,
+      message: 'Asset adicionado com sucesso',
+      asset
+    })
+  } catch (error) {
+    console.error('Erro ao adicionar asset:', error)
+    return res.status(500).json({ error: 'Erro interno do servidor' })
+  }
+})
+
+router.delete('/my-assets/:symbol', authenticateToken, async (req, res) => {
+  try {
+    const { symbol } = req.params
+    const userId = req.user.id
+
+    if (!symbol) {
+      return res.status(400).json({ error: 'Símbolo é obrigatório' })
+    }
+
+    const existingAsset = await prisma.my_assets.findFirst({
+      where: { user_id: userId, symbol: symbol.toUpperCase() }
+    })
+
+    if (!existingAsset) {
+      return res.status(404).json({ error: 'Asset não encontrado na sua lista' })
+    }
+
+    await prisma.my_assets.delete({ where: { id: existingAsset.id } })
+    return res.json({ success: true, message: 'Asset removido com sucesso' })
+  } catch (error) {
+    console.error('Erro ao remover asset:', error)
+    return res.status(500).json({ error: 'Erro interno do servidor' })
+  }
+})
+
 export default router
