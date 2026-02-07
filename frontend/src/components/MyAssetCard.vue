@@ -175,8 +175,8 @@
     <div class="p-3 bg-gray-900 relative z-1 border-t border-slate-600 rounded-b-lg">
       <div class="flex justify-end items-center">
         <!-- <Button label="Ver Detalhes" variant="outlined" severity="info" icon="pi pi-chart-line" size="small" @click="viewDetails" rounded/> -->
-        <button v-if="!asset.report" class="flex items-center gap-2 rounded-full text-[11pt] bg-gradient-to-r from-blue-500 to-purple-600 px-2 h-[36px] cursor-pointer transition-all hover:outline-blue-600 outline-2 outline-transparent hover:outline-offset-2" @click="generateReport"><i class="pi pi-sparkles" style="font-size: 1rem;"></i> Gerar Relatório</button>
-        <Button v-else-if="asset.report.status == 'pending'" :disabled="true" label="Gerando..." :loading="true" rounded icon="pi pi-file-pdf" size="small" severity="secondary"/>
+        <button v-if="!asset.report && !generating" class="flex items-center gap-2 rounded-full text-[11pt] bg-gradient-to-r from-blue-500 to-purple-600 px-2 h-[36px] cursor-pointer transition-all hover:outline-blue-600 outline-2 outline-transparent hover:outline-offset-2" @click="generateReport"><i class="pi pi-sparkles" style="font-size: 1rem;"></i> Gerar Relatório</button>
+        <Button v-else-if="generating || asset.report?.status == 'pending'" :disabled="true" label="Gerando..." :loading="true" rounded icon="pi pi-file-pdf" size="small" severity="secondary"/>
         <Button v-else-if="asset.report.status == 'active'" rounded icon="pi pi-file-pdf" size="small" severity="secondary" @click="openReport" :loading="openingPDF" />
       </div>
     </div>
@@ -194,6 +194,10 @@ const props = defineProps({
   asset: {
     type: Object,
     required: true
+  },
+  generating: {
+    type: Boolean,
+    default: false
   }
 })
 const openReport = async()=>{

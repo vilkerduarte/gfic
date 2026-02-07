@@ -13,6 +13,10 @@ const props = defineProps({
         type: String,
         required: true
     },
+    type: {
+        type: String,
+        default: 'square'
+    },
     size: {
         type: Number,
         default: 50
@@ -22,10 +26,11 @@ const props = defineProps({
 const loaded = ref(false)
 const avatarRef = ref(null)
 
+
 const avatarStyle = computed(() => ({
     padding: loaded.value ? `4px` : '0px',
     backgroundColor: 'white',
-    borderRadius: '10%',
+    borderRadius: props.type == 'square' ? '10%' : `${props.size}px`,
     transition: 'padding 200ms ease'
 }))
 

@@ -240,9 +240,9 @@ export async function fetchCrypto(moedas = false) {
     return result;
 }
 export async function fetchAll() {
-    let us = await fetchUS();
+    // let us = await fetchUS();
     let br = await fetchBR();
-    let stocks = [...br, ...us].map(a => adequarItem(a));
+    let stocks = [...br].map(a => adequarItem(a));
     let crypto = await fetchCrypto();
     crypto = crypto.map((a) => adequarCripto(a));
     return [...stocks, ...crypto];

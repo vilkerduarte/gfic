@@ -1,0 +1,77 @@
+{
+  "timestamp": 1770193865022,
+  "content": {
+    "data": {
+      "symbol": "AAPL",
+      "companyName": "Apple Inc. Common Stock",
+      "stockType": "Common Stock",
+      "exchange": "NASDAQ-GS",
+      "isNasdaqListed": true,
+      "isNasdaq100": true,
+      "isHeld": false,
+      "primaryData": {
+        "lastSalePrice": "$269.48",
+        "netChange": "-0.53",
+        "percentageChange": "-0.20%",
+        "deltaIndicator": "down",
+        "lastTradeTimestamp": "Feb 4, 2026",
+        "isRealTime": false,
+        "bidPrice": "N/A",
+        "askPrice": "N/A",
+        "bidSize": "N/A",
+        "askSize": "N/A",
+        "volume": "64,394,655",
+        "currency": null
+      },
+      "secondaryData": null,
+      "marketStatus": "Closed",
+      "assetClass": "STOCKS",
+      "keyStats": {
+        "fiftyTwoWeekHighLow": {
+          "label": "52 Week Range:",
+          "value": "169.21 - 288.62"
+        },
+        "dayrange": {
+          "label": "High/Low:",
+          "value": "NA"
+        }
+      },
+      "notifications": [
+        {
+          "headline": "UPCOMING EVENTS",
+          "eventTypes": [
+            {
+              "message": "Ex-Dividend Date : Feb 9, 2026",
+              "eventName": "Dividend Date",
+              "url": {
+                "label": "AAPL Ex-Dividend Date : Feb 9, 2026",
+                "value": "/market-activity/stocks/AAPL/dividend-history"
+              },
+              "id": "upcoming_events"
+            }
+          ]
+        },
+        {
+          "headline": "HIGH TECHNICAL ATTRIBUTE",
+          "eventTypes": [
+            {
+              "message": "AAPL has a High Technical Rating by Nasdaq Dorsey Wright. Discover why technical analysis matters",
+              "eventName": "High Technical Attribute",
+              "url": {
+                "label": "Discover why technical analysis matters",
+                "value": "https://www.nasdaq.com/solutions/nasdaq-dorsey-wright/technical-analysis"
+              },
+              "id": "tech_attribute"
+            }
+          ]
+        }
+      ]
+    },
+    "message": null,
+    "status": {
+      "rCode": 200,
+      "bCodeMessage": null,
+      "developerMessage": null
+    }
+  }
+}

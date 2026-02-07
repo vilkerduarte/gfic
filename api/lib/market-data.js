@@ -34,7 +34,7 @@ export const formatStockForClient = (stock) => {
 
   const logoPath =
     stock.logo ||
-    `/files/logo/${stock.symbol}.svg?q=${encodeURIComponent(stock.name || '')}`
+    `/files/logo/${stock.type}-${stock.symbol}.png`
 
   return {
     id: stock.id,
@@ -71,6 +71,7 @@ async function callFinnhub(methodName, ...args) {
 export async function fetchFinnhubQuote(symbol) {
   if (!symbol || !FINNHUB_TOKEN) return null
   const data = await callFinnhub('quote', symbol)
+  console.log(data);
   if (!data) return null
   return {
     current: data.c ?? null,
@@ -87,7 +88,7 @@ export async function hydrateStocksWithPrices(stocks = []) {
     (item) => item && item.close == null && item.type !== 'CRYPTO'
   )
 
-  const symbols = [...new Set(targets.map((s) => s.symbol))].slice(0, 25)
+  const symbols = [...new Set(targets.map((s) => s.symbol))].slice(0, 20)
   const quotePairs = await Promise.all(
     symbols.map(async (symbol) => {
       try {
@@ -222,10 +223,7 @@ async function searchFinnhub(query, limit = 6) {
 export async function fetchHistoricalDataForStock(stock) {
   if (!stock) throw new Error('Ativo não encontrado na base')
   const mic = (stock.mic || '').toUpperCase()
-  const isBR =
-    mic === 'BVMF' ||
-    (stock.currency || '').toUpperCase() === 'BRL' ||
-    !!classifyB3Symbol(stock.symbol, stock.name)
+  const isBR = mic === 'BVMF' || (stock.currency || '').toUpperCase() === 'BRL'
 
   if (stock.type === 'CRYPTO') {
     return fetchCryptoSeries(stock.symbol)
@@ -345,7 +343,7 @@ async function fetchFinnhubSeries(stock) {
 async function fetchCryptoSeries(symbol) {
   const resp = await brapiClient.v2.crypto.retrieve({
     coin: symbol,
-    currency: 'USD'
+    currency: 'BRL'
   })
 
   const coin =

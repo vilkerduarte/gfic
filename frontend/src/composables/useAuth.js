@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import API from '@/utils/api'
+import { connectSocket, disconnectSocket } from '@/utils/socket'
 
 // 🔸 estado global (compartilhado entre todos os componentes)
 const user = ref(null)
@@ -36,11 +37,13 @@ export const useAuth = () => {
 
             if (response.user) {
                 user.value = {...response.user,assets: response.user.assets.split('!')};
+                connectSocket()
                 return response.user;
             }
 
             if (response.status === 401) {
                 user.value = null;
+                disconnectSocket()
                 return null;
             }
 
@@ -48,6 +51,7 @@ export const useAuth = () => {
         } catch (err) {
             error.value = err.message;
             user.value = null;
+            disconnectSocket()
             return null;
         } finally {
             loading.value = false;
@@ -62,6 +66,7 @@ export const useAuth = () => {
                 throw new Error(error)
             })
             user.value = null;
+            disconnectSocket()
             return { success: true }
         } catch (err) {
             error.value = err.message

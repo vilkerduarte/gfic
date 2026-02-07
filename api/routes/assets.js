@@ -15,6 +15,20 @@ import {
 
 const router = Router()
 
+router.get('/details/:symbol', optionalAuth, async (req, res) => {
+  try {
+    const { symbol } = req.params
+    const stock = await findStockBySymbol(symbol)
+    if (!stock) return res.status(404).json({ error: 'Ativo não encontrado' })
+    const series = await fetchHistoricalDataForStock(stock)
+    const analysis = analyzeStockData(series)
+    return res.status(200).json({ stock, analysis, series })
+  } catch (error) {
+    console.error('Erro ao detalhar asset:', error)
+    return res.status(500).json({ error: 'Erro interno do servidor' })
+  }
+})
+
 const typeCache = new Map() // key: region, value: {ts, types}
 const CACHE_TTL_MS = 60 * 60 * 1000
 
@@ -54,7 +68,7 @@ async function getCachedTypes(region) {
   return types
 }
 
-router.get('/', async (req, res) => {
+router.get('/', optionalAuth, async (req, res) => {
   try {
     const region = req.query.region || 'all'
     const page = Math.max(parseInt(req.query.page) || 1, 1)
@@ -81,7 +95,28 @@ router.get('/', async (req, res) => {
       getCachedTypes(region)
     ])
 
-    const payload = await hydrateStocksWithPrices(list)
+    let payload = await hydrateStocksWithPrices(list)
+
+    if (req.user) {
+      const symbols = payload.map((a) => a.symbol)
+      const myAssets = await prisma.my_assets.findMany({
+        where: { user_id: req.user.id, symbol: { in: symbols } },
+        select: { symbol: true }
+      })
+      const mySet = new Set(myAssets.map((m) => m.symbol))
+      const reports = await prisma.reports.findMany({
+        where: { user_id: req.user.id, symbol: { in: symbols }, status: { in: ['active', 'pending'] } },
+        select: { symbol: true, status: true, hash: true, path: true, created_at: true }
+      })
+      const repo = {}
+      reports.forEach((r) => { repo[r.symbol] = r })
+      payload = payload.map((a) => ({
+        ...a,
+        isInMyAssets: mySet.has(a.symbol),
+        report: repo[a.symbol] || null
+      }))
+    }
+
     return res.status(200).json({
       list: payload,
       page,

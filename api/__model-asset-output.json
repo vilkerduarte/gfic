@@ -1,0 +1,337 @@
+{
+  "data": {
+    "stock": {
+      "id": 14957,
+      "currency": "USD",
+      "name": "APPLE INC",
+      "symbol": "AAPL",
+      "mic": "XNAS",
+      "figi": "BBG000B9XRY4",
+      "type": "Common Stock",
+      "close": null,
+      "change": null,
+      "volume": null,
+      "market_cap": null,
+      "sector": null,
+      "logo": null
+    },
+    "profile": {
+      "data": {
+        "ModuleTitle": {
+          "label": "Module Title",
+          "value": "Company Description"
+        },
+        "CompanyName": {
+          "label": "Company Name",
+          "value": "Apple Inc."
+        },
+        "Symbol": {
+          "label": "Symbol",
+          "value": "AAPL"
+        },
+        "Address": {
+          "label": "Address",
+          "value": "ONE APPLE PARK WAY, CUPERTINO, California, 95014, United States"
+        },
+        "Phone": {
+          "label": "Phone",
+          "value": "+1 408 - 996-1010"
+        },
+        "Industry": {
+          "label": "Industry",
+          "value": "Computer Manufacturing"
+        },
+        "Sector": {
+          "label": "Sector",
+          "value": "Technology"
+        },
+        "Region": {
+          "label": "Region",
+          "value": "North America"
+        },
+        "CompanyDescription": {
+          "label": "Company Description",
+          "value": "Apple revolutionized personal technology with the introduction of the Macintosh in 1984. Today, Apple leads the world in innovation with iPhone, iPad, Mac, AirPods, Apple Watch, and Apple Vision Pro. Apple's six software platforms - iOS, iPadOS, macOS, watchOS, visionOS, and tvOS - provide seamless experiences across all Apple devices and empower people with breakthrough services including the App Store, Apple Music, Apple Pay, iCloud, and Apple TV. Apple's more than 150,000 employees are dedicated to making the best products on earth and to leaving the world better than we found it."
+        },
+        "CompanyUrl": {
+          "label": "Company Url",
+          "value": "https://www.apple.com"
+        }
+      },
+      "message": null,
+      "status": {
+        "rCode": 200,
+        "bCodeMessage": null,
+        "developerMessage": null
+      }
+    },
+    "info": {
+      "data": {
+        "symbol": "AAPL",
+        "companyName": "Apple Inc. Common Stock",
+        "stockType": "Common Stock",
+        "exchange": "NASDAQ-GS",
+        "isNasdaqListed": true,
+        "isNasdaq100": true,
+        "isHeld": false,
+        "primaryData": {
+          "lastSalePrice": "$269.48",
+          "netChange": "-0.53",
+          "percentageChange": "-0.20%",
+          "deltaIndicator": "down",
+          "lastTradeTimestamp": "Feb 4, 2026",
+          "isRealTime": false,
+          "bidPrice": "N/A",
+          "askPrice": "N/A",
+          "bidSize": "N/A",
+          "askSize": "N/A",
+          "volume": "64,394,655",
+          "currency": null
+        },
+        "secondaryData": null,
+        "marketStatus": "Closed",
+        "assetClass": "STOCKS",
+        "keyStats": {
+          "fiftyTwoWeekHighLow": {
+            "label": "52 Week Range:",
+            "value": "169.21 - 288.62"
+          },
+          "dayrange": {
+            "label": "High/Low:",
+            "value": "NA"
+          }
+        },
+        "notifications": [
+          {
+            "headline": "UPCOMING EVENTS",
+            "eventTypes": [
+              {
+                "message": "Ex-Dividend Date : Feb 9, 2026",
+                "eventName": "Dividend Date",
+                "url": {
+                  "label": "AAPL Ex-Dividend Date : Feb 9, 2026",
+                  "value": "/market-activity/stocks/AAPL/dividend-history"
+                },
+                "id": "upcoming_events"
+              }
+            ]
+          },
+          {
+            "headline": "HIGH TECHNICAL ATTRIBUTE",
+            "eventTypes": [
+              {
+                "message": "AAPL has a High Technical Rating by Nasdaq Dorsey Wright. Discover why technical analysis matters",
+                "eventName": "High Technical Attribute",
+                "url": {
+                  "label": "Discover why technical analysis matters",
+                  "value": "https://www.nasdaq.com/solutions/nasdaq-dorsey-wright/technical-analysis"
+                },
+                "id": "tech_attribute"
+              }
+            ]
+          }
+        ]
+      },
+      "message": null,
+      "status": {
+        "rCode": 200,
+        "bCodeMessage": null,
+        "developerMessage": null
+      }
+    },
+    "summary": {
+      "data": {
+        "symbol": "AAPL",
+        "summaryData": {
+          "Exchange": {
+            "label": "Exchange",
+            "value": "NASDAQ-GS"
+          },
+          "Sector": {
+            "label": "Sector",
+            "value": "Technology"
+          },
+          "Industry": {
+            "label": "Industry",
+            "value": "Computer Manufacturing"
+          },
+          "OneYrTarget": {
+            "label": "1 Year Target",
+            "value": "$300.00"
+          },
+          "TodayHighLow": {
+            "label": "Today's High/Low",
+            "value": "N/A"
+          },
+          "ShareVolume": {
+            "label": "Share Volume",
+            "value": "64,394,655"
+          },
+          "AverageVolume": {
+            "label": "Average Volume",
+            "value": "46,298,846"
+          },
+          "PreviousClose": {
+            "label": "Previous Close",
+            "value": "$270.01"
+          },
+          "FiftTwoWeekHighLow": {
+            "label": "52 Week High/Low",
+            "value": "$288.62/$169.2101"
+          },
+          "MarketCap": {
+            "label": "Market Cap",
+            "value": "3,956,273,607,200"
+          },
+          "AnnualizedDividend": {
+            "label": "Annualized Dividend",
+            "value": "$1.04"
+          },
+          "ExDividendDate": {
+            "label": "Ex Dividend Date",
+            "value": "Nov 10, 2025"
+          },
+          "DividendPaymentDate": {
+            "label": "Dividend Pay Date",
+            "value": "Nov 13, 2025"
+          },
+          "Yield": {
+            "label": "Current Yield",
+            "value": "0.39%"
+          }
+        },
+        "assetClass": "STOCKS",
+        "additionalData": null,
+        "bidAsk": {
+          "Bid * Size": {
+            "label": "Bid * Size",
+            "value": "N/A"
+          },
+          "Ask * Size": {
+            "label": "Ask * Size",
+            "value": "N/A"
+          }
+        }
+      },
+      "message": null,
+      "status": {
+        "rCode": 200,
+        "bCodeMessage": null,
+        "developerMessage": null
+      }
+    },
+    "history": {
+      "data": {
+        "symbol": "AAPL",
+        "totalRecords": 11,
+        "tradesTable": {
+          "asOf": null,
+          "headers": {
+            "date": "Date",
+            "close": "Close/Last",
+            "volume": "Volume",
+            "open": "Open",
+            "high": "High",
+            "low": "Low"
+          },
+          "rows": [
+            {
+              "date": "02/03/2026",
+              "close": "$269.48",
+              "volume": "64,394,660",
+              "open": "$269.20",
+              "high": "$271.875",
+              "low": "$267.61"
+            },
+            {
+              "date": "02/02/2026",
+              "close": "$270.01",
+              "volume": "73,913,430",
+              "open": "$260.03",
+              "high": "$270.49",
+              "low": "$259.205"
+            },
+            {
+              "date": "01/30/2026",
+              "close": "$259.48",
+              "volume": "92,443,410",
+              "open": "$255.165",
+              "high": "$261.8999",
+              "low": "$252.18"
+            },
+            {
+              "date": "01/29/2026",
+              "close": "$258.28",
+              "volume": "67,253,010",
+              "open": "$258.00",
+              "high": "$259.65",
+              "low": "$254.41"
+            },
+            {
+              "date": "01/28/2026",
+              "close": "$256.44",
+              "volume": "41,287,970",
+              "open": "$257.65",
+              "high": "$258.855",
+              "low": "$254.51"
+            },
+            {
+              "date": "01/27/2026",
+              "close": "$258.27",
+              "volume": "49,648,270",
+              "open": "$259.17",
+              "high": "$261.95",
+              "low": "$258.21"
+            },
+            {
+              "date": "01/26/2026",
+              "close": "$255.41",
+              "volume": "55,969,230",
+              "open": "$251.48",
+              "high": "$256.56",
+              "low": "$249.80"
+            },
+            {
+              "date": "01/23/2026",
+              "close": "$248.04",
+              "volume": "41,688,980",
+              "open": "$247.32",
+              "high": "$249.41",
+              "low": "$244.68"
+            },
+            {
+              "date": "01/22/2026",
+              "close": "$248.35",
+              "volume": "39,708,340",
+              "open": "$249.20",
+              "high": "$251.00",
+              "low": "$248.15"
+            },
+            {
+              "date": "01/21/2026",
+              "close": "$247.65",
+              "volume": "54,641,730",
+              "open": "$248.70",
+              "high": "$251.56",
+              "low": "$245.18"
+            },
+            {
+              "date": "01/20/2026",
+              "close": "$246.70",
+              "volume": "80,267,520",
+              "open": "$252.73",
+              "high": "$254.79",
+              "low": "$243.42"
+            }
+          ]
+        }
+      },
+      "message": null,
+      "status": {
+        "rCode": 200,
+        "bCodeMessage": null,
+        "developerMessage": null
+      }
+    }
+  }
+}

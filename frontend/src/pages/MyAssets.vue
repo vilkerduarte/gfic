@@ -42,6 +42,7 @@
           :key="asset.hash" class="relative" :style="`z-index: ${(200 - i)}`">
             <MyAssetCard
               :asset="asset"
+              :generating="generating[asset.symbol]"
               @remove="removeAsset"
               @generate="generateReport"
               @openreport="openReport"
@@ -110,13 +111,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted,watch, inject } from 'vue'
+import { ref, computed, onMounted,watch, inject, reactive, onUnmounted } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { useToast } from 'primevue/usetoast'
 import API from '@/utils/api'
 import ClassicToolbar from '@/components/ClassicToolbar.vue'
 import MyAssetCard from '@/components/MyAssetCard.vue'
 import AssetSearchCard from '@/components/AssetSearchCard.vue'
+import { getSocket, emitAsync } from '@/utils/socket'
 
 import { unified } from 'unified'
 import remarkParse from 'remark-parse'
@@ -131,6 +133,7 @@ const searchQuery = ref('')
 const currentPage = ref(0)
 const itemsPerPage = 12
 const totalItems = ref(0)
+const generating = reactive({})
 
 // Estados para busca global
 const globalSearchQuery = ref('')
@@ -145,10 +148,19 @@ const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage))
 const loadMyAssets = async (page = 0) => {
   loading.value = true
   try {
-    const response = await API.get(`/assets/my-assets?page=${page + 1}&q=${searchQuery.value}`)
-    myAssets.value = response.list || []
-    totalItems.value = response.total_items || 0
-    currentPage.value = page
+    const socket = getSocket()
+    if (socket && socket.connected) {
+      const data = await emitAsync('my-assets:fetch', { page: page + 1, q: searchQuery.value })
+      myAssets.value = data.list || []
+      totalItems.value = data.total_items || 0
+      currentPage.value = page
+    } else {
+      const response = await API.get(`/assets/my-assets?page=${page + 1}&q=${searchQuery.value}`)
+      myAssets.value = response.list || []
+      totalItems.value = response.total_items || 0
+      currentPage.value = page
+    }
+    myAssets.value.forEach((a) => { generating[a.symbol] = a.report?.status === 'pending' })
   } catch (error) {
     toast.add({
       severity: 'error',
@@ -272,7 +284,13 @@ const generateReport = async(asset)=>{
       creditModalManager.open()
     }else{
       try {
-        await API.get(`/reports/create/${asset.symbol}`);
+        generating[asset.symbol] = true
+        const socket = getSocket()
+        if (socket && socket.connected) {
+          await emitAsync('report:create', { symbol: asset.symbol })
+        } else {
+          await API.get(`/reports/create/${asset.symbol}`);
+        }
         loadMyAssets(currentPage.value);
         auth.fetchUser();
         toast.add({
@@ -282,7 +300,9 @@ const generateReport = async(asset)=>{
           life: 10000
         });
       } catch (error) {
-        
+        toast.add({ severity:'error', summary:'Erro', detail:error.error || 'Falha ao gerar relatório' })
+      } finally {
+        generating[asset.symbol] = false
       }
     }
   }
@@ -319,5 +339,17 @@ const poolingFetch = async()=>{
 // Lifecycle
 onMounted(() => {
   poolingFetch();
+  const socket = getSocket()
+  let handler = null
+  if (socket) {
+    handler = ({ symbol, report }) => {
+      myAssets.value = myAssets.value.map((a) => a.symbol === symbol ? { ...a, report } : a)
+      generating[symbol] = report?.status === 'pending'
+    }
+    socket.on('report:update', handler)
+  }
+  onUnmounted(() => {
+    if (socket && handler) socket.off('report:update', handler)
+  })
 })
 </script>

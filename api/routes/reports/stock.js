@@ -49,7 +49,7 @@ router.get('/create/:symbol', authenticateToken, async(req, res) => {
         await Admin.removeCredits(req.user,-1,"Relatório "+symbol)
         // analisador.analyzeStock(symbol,item.hash);
 
-        const workerPath = path.resolve('workers/stock-analyzer.worker.js')
+        const workerPath = path.resolve('./workers/stock-analyzer.worker.js')
         const worker = new Worker(workerPath, {
           workerData: { symbol, hash: item.hash }
         })

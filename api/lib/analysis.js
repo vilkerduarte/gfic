@@ -2,6 +2,7 @@ export function analyzeStockData(series) {
   if (!series || !Array.isArray(series.candles)) {
     return { error: 'Invalid price series' }
   }
+  console.log(series);
 
   const validData = series.candles
     .map((candle) => ({
@@ -30,10 +31,10 @@ export function analyzeStockData(series) {
     .filter((v) => v != null && v > 0)
 
   const currentPrice = prices.at(-1)
-  const previousClose =
-    series.previousClose ??
-    prices.at(-2) ??
-    currentPrice
+  const previousClose = typeof series.previousClose === 'number' ? series.previousClose
+    : prices.length > 1
+      ? prices[prices.length - 2]
+      : null
 
   const priceChange = previousClose != null ? currentPrice - previousClose : 0
   const priceChangePercent =
@@ -44,11 +45,12 @@ export function analyzeStockData(series) {
   const dayHigh = Math.max(...validData.map((d) => d.high))
   const dayLow = Math.min(...validData.map((d) => d.low))
   const dayRange = dayHigh - dayLow
+  const midPrice = (dayHigh + dayLow) / 2
   const dayRangePercent =
-    ((dayHigh - dayLow) / ((dayHigh + dayLow) / 2)) * 100
+    midPrice > 0 ? ((dayHigh - dayLow) / midPrice) * 100 : 0
 
   const firstPrice = prices[0]
-  const dayPerformance = ((currentPrice - firstPrice) / firstPrice) * 100
+  const dayPerformance = firstPrice > 0 ? ((currentPrice - firstPrice) / firstPrice) * 100 : 0
 
   const marketOpen = validData[0].date
   const marketClose = validData.at(-1).date
@@ -67,9 +69,9 @@ export function analyzeStockData(series) {
 
   const avgReturn =
     returns.reduce((sum, r) => sum + r, 0) / (returns.length || 1)
+  const divisor = returns.length > 1 ? returns.length - 1 : 1
   const volatility = Math.sqrt(
-    returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) /
-      (returns.length || 1)
+    returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / divisor
   )
 
   const resistance = dayHigh
@@ -138,8 +140,8 @@ export function analyzeStockData(series) {
       dataPoints,
       dataFrequency: round(dataFrequency),
       tradingHours: round(tradingHours),
-      marketOpen: marketOpen.toLocaleTimeString(),
-      marketClose: marketClose.toLocaleTimeString(),
+      marketOpen: marketOpen.toISOString(),
+      marketClose: marketClose.toISOString(),
       dataGranularity: '1d'
     },
 

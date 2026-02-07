@@ -1,0 +1,76 @@
+{
+  "timestamp": 1770192520171,
+  "content": {
+    "data": {
+      "symbol": "AAPL",
+      "totalRecords": 60,
+      "tradesTable": {
+        "asOf": null,
+        "headers": {
+          "date": "Date",
+          "close": "Close/Last",
+          "volume": "Volume",
+          "open": "Open",
+          "high": "High",
+          "low": "Low"
+        },
+        "rows": [
+          {
+            "date": "02/03/2026",
+            "close": "$269.48",
+            "volume": "64,394,660",
+            "open": "$269.20",
+            "high": "$271.875",
+            "low": "$267.61"
+          },
+          {
+            "date": "02/02/2026",
+            "close": "$270.01",
+            "volume": "73,913,430",
+            "open": "$260.03",
+            "high": "$270.49",
+            "low": "$259.205"
+          },
+          {
+            "date": "01/30/2026",
+            "close": "$259.48",
+            "volume": "92,443,410",
+            "open": "$255.165",
+            "high": "$261.8999",
+            "low": "$252.18"
+          },
+          {
+            "date": "01/29/2026",
+            "close": "$258.28",
+            "volume": "67,253,010",
+            "open": "$258.00",
+            "high": "$259.65",
+            "low": "$254.41"
+          },
+          {
+            "date": "01/28/2026",
+            "close": "$256.44",
+            "volume": "41,287,970",
+            "open": "$257.65",
+            "high": "$258.855",
+            "low": "$254.51"
+          },
+          {
+            "date": "01/27/2026",
+            "close": "$258.27",
+            "volume": "49,648,270",
+            "open": "$259.17",
+            "high": "$261.95",
+            "low": "$258.21"
+          }
+        ]
+      }
+    },
+    "message": null,
+    "status": {
+      "rCode": 200,
+      "bCodeMessage": null,
+      "developerMessage": null
+    }
+  }
+}

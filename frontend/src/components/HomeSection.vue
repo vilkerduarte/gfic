@@ -26,7 +26,13 @@
         v-for="asset in assets"
         :key="region + '-' + asset.symbol"
         :asset="asset"
-        :is-in-my-assets="false"
+        :is-in-my-assets="isInMyAssets(asset)"
+        :generating="isGenerating(asset)"
+        @details="emit('details', asset)"
+        @generate-report="emit('generate-report', asset)"
+        @open-report="emit('open-report', asset)"
+        @asset-added="emit('refresh')"
+        @asset-removed="emit('refresh')"
       />
     </div>
 
@@ -53,6 +59,7 @@
 </template>
 
 <script setup>
+import { inject } from 'vue'
 import AssetCard from './AssetCard.vue'
 
 const props = defineProps({
@@ -65,10 +72,21 @@ const props = defineProps({
   types: { type: Array, default: () => [] },
   selectedType: { type: String, default: '' },
   showTypeFilter: { type: Boolean, default: true },
-  loading: { type: Boolean, default: false }
+  loading: { type: Boolean, default: false },
+  generatingMap: { type: Object, default: () => ({}) }
 })
 
-const emit = defineEmits(['change-page', 'change-type'])
+const emit = defineEmits(['change-page', 'change-type', 'details', 'generate-report', 'open-report', 'refresh'])
+const auth = inject('auth', null)
 
 const onType = (value) => emit('change-type', props.region, value)
+
+const isInMyAssets = (asset) => {
+  const list = auth?.user.value?.assets || []
+  return asset.isInMyAssets || list.includes(asset.symbol)
+}
+
+const isGenerating = (asset) => {
+  return !!props.generatingMap[asset.symbol]
+}
 </script>
