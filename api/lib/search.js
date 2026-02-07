@@ -125,7 +125,7 @@ export default class StockAnalyzer {
         return new Promise(async (resolve, reject) => {
             try {
                 const response = await axios.post(`${this.baseUrl}/chat/completions`, {
-                    model: "deepseek-chat",
+                    model: "deepseek-reasoner",
                     messages: [{ role: "user", content: prompt }],
                     max_tokens: 8000,
                     stream: true, // ⭐ AGORA COM STREAMING!

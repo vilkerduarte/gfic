@@ -43,3 +43,16 @@ export const micNameMap = {
   IEXG: "Investors Exchange (IEX)",
   BVMF: "B3 - São Paulo"
 }
+
+export const labels = {
+  "Module Title":"Módulo",
+  "Company Name":"Nome da Empresa",
+  "Symbol":"Sigla",
+  "Address":"Endereço",
+  "Phone":"Telefone",
+  "Industry":"Indústria",
+  "Sector":"Setor",
+  "Region":"Região",
+  "Company Description":"Descrição",
+  "Company Url":"Website",
+}

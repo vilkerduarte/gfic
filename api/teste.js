@@ -2,7 +2,7 @@ import 'dotenv/config'
 import fs from 'fs';
 import { fetchAll, fetchCrypto, finnhubClient } from './lib/indexer-utils.js';
 import prisma from './lib/prisma.js';
-import { adequarNasdaq, NASDAQ } from './lib/external-cache.js';
+import { adequarNasdaq, CryptoData, NASDAQ } from './lib/external-cache.js';
 import { findStockBySymbol } from './lib/market-data.js';
 import { retroDate } from './lib/utils.js';
 
@@ -53,6 +53,10 @@ async function tst() {
     let history = await NASDAQ.history(stock.symbol,retroDate(15),20000);
     fs.writeFileSync('__model-asset-output.json',JSON.stringify({data:{ stock, profile, info, summary, history }},null,2));
 }
+async function test(){
+    let i = CryptoData.getQuotes('ETH');
+    
+}
 // main();
-// tst();
-indexer();
+test();
+// indexer();

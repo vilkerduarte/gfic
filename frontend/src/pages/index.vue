@@ -23,123 +23,167 @@
       :generating-map="generating" @change-page="handlePage" @change-type="handleType" @details="handleDetails"
       @generate-report="handleGenerateReport" @open-report="handleOpenReport" />
 
-    <Dialog v-model:visible="detailVisible" header="Detalhes do Ativo" :style="{ width: '720px' }">
-      <div v-if="detailData" class="space-y-3">
-        <div class="flex justify-between items-center gap-2">
-          <LogoAsset :src="logoUrl(detailData.stock)" :type="detailData.stock?.type == 'CRYPTO' ? 'rounded' : 'square'"/>
+    
+    
+    <Dialog v-model:visible="detailVisible" header="Detalhes do Ativo" :style="{ width: '840px' }">
+      <div v-if="detail" class="space-y-6">
+        <div class="flex justify-between items-center gap-3">
+          <LogoAsset :src="logoUrl(detail.stock)" :type="detail.stock?.type == 'CRYPTO' ? 'rounded' : 'square'" />
           <div class="flex-auto">
-            <h3 class="text-xl font-bold">{{ detailData.stock?.name || detailData.stock?.symbol }}</h3>
-            <p class="text-sm text-slate-400">{{ detailData.stock?.symbol }} • {{ detailData.stock?.exchange ||
-              detailData.stock?.mic }}</p>
+            <h3 class="text-xl font-bold">{{ detail.name }}</h3>
+            <p class="text-sm text-slate-400">
+              {{ detail.symbol }}<span v-if="detail.exchange"> - {{ detail.exchange }}</span>
+            </p>
+            <div class="flex flex-wrap gap-2 mt-2 text-xs text-slate-300">
+              <span v-if="detail.assetClass" class="px-2 py-1 rounded bg-slate-800 border border-slate-700">{{ detail.assetClass }}</span>
+              <span v-if="detail.stock?.sector" class="px-2 py-1 rounded bg-slate-800 border border-slate-700">Setor: {{ detail.stock.sector }}</span>
+              <span v-if="detail.info?.industry" class="px-2 py-1 rounded bg-slate-800 border border-slate-700">Industria: {{ detail.info.industry }}</span>
+            </div>
           </div>
           <div class="text-right">
-            <p class="text-lg font-semibold">{{ formatCurrency(detailData.analysis?.priceMetrics?.currentPrice,
-              detailData.stock?.currency) }}</p>
-            <p class="text-sm text-slate-400">Variação: {{
-              formatPercent(detailData.analysis?.priceMetrics?.priceChangePercent) }}</p>
+            <p class="text-lg font-semibold">{{ formatCurrency(detail.price, detail.currency) }}</p>
+            <p class="text-sm" :class="changeClass(detail.changePct)">
+              {{ formatSignedCurrency(detail.change, detail.currency) }}
+              <span class="ml-1">({{ formatPercent(detail.changePct) }})</span>
+            </p>
           </div>
         </div>
-        <pre>{{ JSON.stringify(detailData,null,2) }}</pre>
-        
-        <div v-if="detailData?.analysis" class="space-y-6 text-sm">
+        <!-- <pre>{{ JSON.stringify(detail,null,2) }}</pre> -->
 
-          <!-- HERO -->
+        <section v-if="detail.type === 'analysis' && detail.analysis" class="space-y-6 text-sm">
           <section class="flex justify-between items-end">
             <div>
-              <h3 class="text-2xl font-bold">
-                {{ detailData.stock?.symbol }}
-              </h3>
-              <p class="text-slate-400">
-                {{ detailData.stock?.name }} • {{ detailData.stock?.exchange }}
-              </p>
+              <h3 class="text-2xl font-bold">{{ detail.symbol }}</h3>
+              <p class="text-slate-400">{{ detail.stock?.name }} - {{ detail.exchange }}</p>
             </div>
-
             <div class="text-right">
-              <p class="text-3xl font-bold">
-                {{ formatCurrency(detailData.analysis.priceMetrics.currentPrice, detailData.stock.currency) }}
-              </p>
-              <p class="flex items-center justify-end gap-1 font-medium" :class="detailData.analysis.priceMetrics.priceChangePercent < 0
-                ? 'text-red-400'
-                : 'text-emerald-400'">
-                <span>
-                  {{ detailData.analysis.priceMetrics.priceChangePercent < 0 ? '▼' : '▲' }} </span>
-                    {{ formatPercent(detailData.analysis.priceMetrics.priceChangePercent) }}
+              <p class="text-3xl font-bold">{{ formatCurrency(detail.analysis?.priceMetrics?.currentPrice, detail.currency) }}</p>
+              <p class="flex items-center justify-end gap-1 font-medium" :class="changeClass(detail.analysis?.priceMetrics?.priceChangePercent)">
+                <span>{{ (detail.analysis?.priceMetrics?.priceChangePercent ?? 0) < 0 ? 'v' : '^' }}</span>
+                {{ formatPercent(detail.analysis?.priceMetrics?.priceChangePercent) }}
               </p>
             </div>
           </section>
 
-          <!-- SUMMARY TAGS -->
           <section class="flex flex-wrap gap-2">
-            <span class="px-3 py-1 rounded-full bg-slate-800 border border-slate-700">
-              {{ detailData.analysis.summary.trend }}
+            <span class="px-3 py-1 rounded-full bg-slate-800 border border-slate-700" v-if="detail.analysis?.summary?.trend">
+              {{ detail.analysis.summary.trend }}
             </span>
-            <span class="px-3 py-1 rounded-full bg-slate-800 border border-slate-700">
-              {{ detailData.analysis.summary.marketCondition }}
+            <span class="px-3 py-1 rounded-full bg-slate-800 border border-slate-700" v-if="detail.analysis?.summary?.marketCondition">
+              {{ detail.analysis.summary.marketCondition }}
             </span>
-            <span class="px-3 py-1 rounded-full bg-slate-800 border border-slate-700">
-              {{ detailData.analysis.summary.volumeActivity }}
+            <span class="px-3 py-1 rounded-full bg-slate-800 border border-slate-700" v-if="detail.analysis?.summary?.volumeActivity">
+              {{ detail.analysis.summary.volumeActivity }}
             </span>
-            <span class="px-3 py-1 rounded-full bg-slate-800 border border-slate-700">
-              Força: {{ detailData.analysis.summary.strength }}
+            <span class="px-3 py-1 rounded-full bg-slate-800 border border-slate-700" v-if="detail.analysis?.summary?.strength">
+              Forca: {{ detail.analysis.summary.strength }}
             </span>
           </section>
 
-          <!-- PRICE METRICS -->
           <section>
-            <h4 class="font-semibold mb-2 text-slate-300">Preço</h4>
+            <h4 class="font-semibold mb-2 text-slate-300">Preco</h4>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Metric label="Máxima" :value="detailData.analysis.priceMetrics.dayHigh" />
-              <Metric label="Mínima" :value="detailData.analysis.priceMetrics.dayLow" />
-              <Metric label="Range %" :value="formatPercent(detailData.analysis.priceMetrics.dayRangePercent)" />
-              <Metric label="VWAP" :value="detailData.analysis.technicalMetrics.vwap" />
+              <Metric label="Maxima" :value="detail.analysis?.priceMetrics?.dayHigh" />
+              <Metric label="Minima" :value="detail.analysis?.priceMetrics?.dayLow" />
+              <Metric label="Range %" :value="formatPercent(detail.analysis?.priceMetrics?.dayRangePercent)" />
+              <Metric label="VWAP" :value="detail.analysis?.technicalMetrics?.vwap" />
             </div>
           </section>
 
-          <!-- TECHNICAL -->
           <section>
-            <h4 class="font-semibold mb-2 text-slate-300">Indicadores Técnicos</h4>
+            <h4 class="font-semibold mb-2 text-slate-300">Indicadores Tecnicos</h4>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Metric label="Volatilidade" :value="detailData.analysis.technicalMetrics.volatility" />
-              <Metric label="Momentum %" :value="formatPercent(detailData.analysis.technicalMetrics.priceMomentum)" />
-              <Metric label="Bullish Bias" :value="formatPercent(detailData.analysis.technicalMetrics.bullishBias)" />
-              <Metric label="Resistência" :value="detailData.analysis.technicalMetrics.resistanceLevel" />
+              <Metric label="Volatilidade" :value="detail.analysis?.technicalMetrics?.volatility" />
+              <Metric label="Momentum %" :value="formatPercent(detail.analysis?.technicalMetrics?.priceMomentum)" />
+              <Metric label="Bullish Bias" :value="formatPercent(detail.analysis?.technicalMetrics?.bullishBias)" />
+              <Metric label="Resistencia" :value="detail.analysis?.technicalMetrics?.resistanceLevel" />
             </div>
           </section>
 
-          <!-- VOLUME -->
           <section>
             <h4 class="font-semibold mb-2 text-slate-300">Volume</h4>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Metric label="Total" :value="detailData.analysis.volumeMetrics.totalVolume" />
-              <Metric label="Média" :value="detailData.analysis.volumeMetrics.averageVolume" />
-              <Metric label="Máximo" :value="detailData.analysis.volumeMetrics.maxVolume" />
-              <Metric label="Ratio" :value="detailData.analysis.volumeMetrics.volumeRatio" />
+              <Metric label="Total" :value="detail.analysis?.volumeMetrics?.totalVolume" />
+              <Metric label="Media" :value="detail.analysis?.volumeMetrics?.averageVolume" />
+              <Metric label="Maximo" :value="detail.analysis?.volumeMetrics?.maxVolume" />
+              <Metric label="Ratio" :value="detail.analysis?.volumeMetrics?.volumeRatio" />
             </div>
           </section>
 
-          <!-- SESSION -->
           <section class="text-xs text-slate-400">
             <p>
-              Dados de Análise:
-              {{ new Date(detailData.analysis.sessionInfo.marketOpen).toLocaleDateString() }}
-              →
-              {{ new Date(detailData.analysis.sessionInfo.marketClose).toLocaleDateString() }}
-              • {{ detailData.analysis.sessionInfo.dataPoints }} candles
-              • Entervalo de {{ detailData.analysis.sessionInfo.dataGranularity }}
+              Dados de Analise:
+              {{ formatDate(detail.analysis?.sessionInfo?.marketOpen) }} ->
+              {{ formatDate(detail.analysis?.sessionInfo?.marketClose) }}
+              - {{ detail.analysis?.sessionInfo?.dataPoints || '-' }} candles
+              - Intervalo de {{ detail.analysis?.sessionInfo?.dataGranularity || '-' }}
             </p>
           </section>
+        </section>
 
-        </div>
-        
+        <section v-else class="space-y-4 text-sm">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Metric label="Ultimo preco" :value="formatCurrency(detail.price, detail.currency)" />
+            <Metric label="Variacao" :value="formatPercent(detail.changePct)" />
+            <Metric label="Volume" :value="detail.info?.primaryData?.volume || detail.stock?.volume || '-'" />
+            <Metric label="Status" :value="detail.info?.marketStatus || '-'" />
+          </div>
 
+          <div v-if="detail.keyStats.length">
+            <h4 class="font-semibold mb-2 text-slate-300">Estatisticas</h4>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <Metric v-for="stat in detail.keyStats" :key="stat.label" :label="stat.label" :value="stat.value" />
+            </div>
+          </div>
+        </section>
+
+        <section v-if="detail.summaryStats.length">
+          <h4 class="font-semibold mb-2 text-slate-300">Resumo</h4>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <Metric v-for="item in detail.summaryStats" :key="item.label" :label="item.label" :value="item.value" />
+          </div>
+        </section>
+
+        <section v-if="detail.profile?.length" class="space-y-2 text-sm">
+          <h4 class="font-semibold text-slate-300">Empresa</h4>
+          <div class="space-y-2 bg-slate-900 border border-slate-700 rounded p-3">
+            <div v-for="item in detail.profile" :key="item.label" class="flex gap-2">
+              <span class="text-slate-400 min-w-[120px]">{{ labels[item.label] || item.label }}:</span>
+              <span class="text-slate-200">{{ item.value }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section v-if="detail.historyRows.length" class="space-y-2 text-sm">
+          <h4 class="font-semibold text-slate-300">Historico recente</h4>
+          <div class="overflow-hidden bg-slate-900 border rounded-2xl border-slate-700 rounded">
+            <StockLineChart :data="detail.historyRows"/>
+          </div>
+        </section>
+
+        <section v-if="detail.candles.length" class="space-y-2 text-sm">
+          <h4 class="font-semibold text-slate-300">Ultimos candles</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div v-for="(candle, idx) in detail.candles.slice(-6)" :key="idx" class="bg-slate-900 border border-slate-700 rounded p-3 flex justify-between">
+              <div>
+                <p class="text-slate-400 text-xs">{{ formatDate(candle.timestamp) }}</p>
+                <p class="text-sm">O {{ candle.open }} -> C {{ candle.close }}</p>
+                <p class="text-xs text-slate-400">H {{ candle.high }} / L {{ candle.low }}</p>
+              </div>
+              <p class="text-xs text-slate-400">Vol: {{ candle.volume ?? 'N/A' }}</p>
+            </div>
+          </div>
+        </section>
       </div>
     </Dialog>
+
+
   </div>
 </template>
 
 <script setup>
 import API from '@/utils/api'
-import { onMounted, reactive, ref, watch, inject } from 'vue'
+import { onMounted, reactive, ref, watch, inject, computed } from 'vue'
 import ClassicToolbar from '@/components/ClassicToolbar.vue'
 import HomeSection from '@/components/HomeSection.vue'
 import { getSocket, emitAsync, connectSocket } from '@/utils/socket'
@@ -150,12 +194,14 @@ import remarkHtml from 'remark-html'
 import { useToast } from 'primevue/usetoast'
 import Metric from '@/components/Metric.vue'
 import LogoAsset from '@/components/LogoAsset.vue'
+import { labels } from '@/constants/marketMaps'
+import StockLineChart from '@/components/StockLineChart.vue'
 const iframe = ref(null)
 
-function logoUrl(stock){
-  console.log(stock);
-  let {currency,symbol,type} = stock;
-  return `${API.HOST}/files/logo/${[symbol,type,currency].join('--')}.svg`
+function logoUrl(stock) {
+  if (!stock) return ''
+  const { currency = 'USD', symbol = '', type = '' } = stock
+  return `${API.HOST}/files/logo/${[symbol, type, currency].join('--')}.svg`
 }
 
 const makeState = () =>
@@ -177,6 +223,102 @@ const auth = inject('auth')
 const toast = useToast()
 const detailVisible = ref(false)
 const detailData = ref(null)
+
+const toNumber = (value) => {
+  if (value === null || value === undefined) return null
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') {
+    const cleaned = value.replace(/[^0-9.-]/g, '')
+    if (!cleaned || cleaned === '-' || cleaned === '.' || cleaned === '-.' || cleaned === '.-') return null
+    const num = Number(cleaned)
+    return Number.isFinite(num) ? num : null
+  }
+  return null
+}
+
+const normalizePrice = (value) => {
+  const num = toNumber(value)
+  if (num === null) return null
+  if (Number.isInteger(num) && num > 1000) return num / 100
+  return num
+}
+
+const formatDate = (value) => {
+  if (!value) return '-'
+  const date = typeof value === 'number' ? new Date(value * 1000) : new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  return date.toLocaleDateString('pt-BR')
+}
+
+const changeClass = (value) => {
+  const num = toNumber(value)
+  if (num === null) return 'text-slate-400'
+  return num < 0 ? 'text-red-400' : 'text-emerald-400'
+}
+
+const detail = computed(() => {
+  const data = detailData.value
+  if (!data) return null
+
+  const stock = data.stock || {}
+  const info = data.info?.data || null
+  const summary = data.summary?.data || null
+  const profileData = data.profile?.data || null
+  const history = data.history?.data || null
+  const analysis = data.analysis || null
+  const series = data.series || null
+
+  const currency = stock.currency || info?.primaryData?.currency || 'USD'
+
+  const price = normalizePrice(
+    analysis?.priceMetrics?.currentPrice ??
+    info?.primaryData?.lastSalePrice ??
+    stock.close
+  )
+
+  const change = normalizePrice(
+    analysis?.priceMetrics?.priceChange ??
+    info?.primaryData?.netChange ??
+    stock.change
+  )
+
+  const changePct = toNumber(
+    analysis?.priceMetrics?.priceChangePercent ??
+    info?.primaryData?.percentageChange ??
+    null
+  )
+
+  const name = stock.name || info?.companyName || analysis?.companyName || stock.symbol
+  const symbol = stock.symbol || info?.symbol || series?.symbol
+  const exchange = info?.exchange || stock.exchange || stock.mic || analysis?.exchange || series?.exchange
+  const assetClass = analysis?.assetClass || info?.assetClass || stock.type
+
+  const summaryStats = summary?.summaryData ? Object.values(summary.summaryData) : []
+  const keyStats = info?.keyStats ? Object.values(info.keyStats) : []
+  const profile = profileData ? Object.values(profileData).filter((item) => item?.value) : []
+  const historyRows = history?.tradesTable?.rows || []
+  const candles = series?.candles || []
+
+  return {
+    stock,
+    info,
+    analysis,
+    price,
+    change,
+    changePct,
+    name,
+    symbol,
+    exchange,
+    currency,
+    assetClass,
+    summaryStats,
+    keyStats,
+    profile,
+    historyRows,
+    candles,
+    type: analysis ? 'analysis' : 'fundamentals'
+  }
+})
 
 const tradingviewContainer = ref(null)
 const tradingviewContainer2 = ref(null)
@@ -308,16 +450,26 @@ function getState(region) {
 }
 
 const formatCurrency = (value, currency = 'USD') => {
-  if (value == null) return '-'
+  const num = normalizePrice(value)
+  if (num === null) return typeof value === 'string' ? value : '-'
   try {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(value)
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(num)
   } catch {
-    return `${currency} ${Number(value).toFixed(2)}`
+    return `${currency} ${num.toFixed(2)}`
   }
 }
+
+const formatSignedCurrency = (value, currency = 'USD') => {
+  const num = normalizePrice(value)
+  if (num === null) return '-'
+  const formatted = formatCurrency(num, currency)
+  return num > 0 ? `+${formatted}` : formatted
+}
+
 const formatPercent = (value) => {
-  if (value == null) return '-'
-  return `${Number(value).toFixed(2)}%`
+  const num = toNumber(value)
+  if (num === null || Number.isNaN(num)) return '-'
+  return `${num.toFixed(2)}%`
 }
 
 onMounted(() => {

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import fs from 'fs';
 import { MD5, retroDate } from './utils.js';
+import { brapiClient } from './indexer-utils.js';
 const nasdaqClient = axios.create({
   baseURL: 'https://api.nasdaq.com',
   timeout: 10000,
@@ -22,7 +23,7 @@ function getCache(md5Path, time = 60) {
     if (data) {
       data = JSON.parse(data);
       if (data.timestamp >= (Date.now() - (time * 1000))) {
-        return data;
+        return data.content;
       }
     }
   }
@@ -46,8 +47,6 @@ export async function fetchWithCache(url, cacheTime = 60) {
       );
       data = response.data;
       writeCache(path, data);
-    } else {
-      data = data.content
     }
     return data;
   } catch (error) {
@@ -162,5 +161,33 @@ export function adequarNasdaq(data) {
     market_cap: toBigIntMoney(data?.marketCap),
     sector: null,
     logo: null
+  }
+}
+
+
+export class CryptoData {
+  static async fetch(url,options={}){
+    let md5_ = MD5('AB'+url+'__'+JSON.stringify(options));
+    let cache = getCache(md5_,60);
+    if(cache){
+      return cache;
+    }else{
+      let result = await fetch(url,options);
+      if(result && result.ok){
+        result = await result.json();
+        writeCache(md5_,result);
+        return result;
+      }
+    }
+    return null;
+  }
+  static async getQuotes(symbol){
+    const apiKey = brapiClient.apiKey;
+    fetch("https://brapi.dev/api/v2/crypto?coin=string", {
+      method: "GET",
+      headers: {
+        "Authorization": "Bearer "
+      }
+    })
   }
 }
