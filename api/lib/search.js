@@ -6,8 +6,11 @@ import fs from 'fs';
 import prisma from './prisma.js';
 import {
   fetchHistoricalDataBySymbol,
+  findStockBySymbol,
   hydrateStocksWithPrices
 } from './market-data.js';
+import { B3, CryptoData, NASDAQ } from './external-cache.js';
+import { retroDate, sanitizeData } from './utils.js';
 
 export async function getStockList(BR = false) {
     const where = BR ? { mic: 'BVMF' } : {}
@@ -48,24 +51,52 @@ export default class StockAnalyzer {
 
         try {
             // Coleta de dados em paralelo
-            await this.fetchStockData(symbol);
-            await this.searchNews(symbol);
-            await this.searchExecutives(symbol);
+            // await this.fetchStockData(symbol);
+            // await this.searchNews(symbol);
+            // await this.searchExecutives(symbol);
 
-            // Geração do relatório
-            const markdownContent = await this.generateReport(symbol);
-
-            await this.saveMarkdown(markdownContent, symbol, hash);
-
-            await prisma.reports.update({
-                where: { hash },
-                data: {
-                    path: `reports/${symbol}_${hash}_${this.timestamp_now}.md`,
-                    status: 'active'
+            let stock = await findStockBySymbol(symbol);
+            if(stock){
+                let data = {}
+                if(stock.type.toUpperCase() == 'CRYPTO'){
+                    data.stock = stock;
+                    data.history = await CryptoData.getQuotes(symbol);
+                }else{
+                    if(stock.currency == 'USD'){
+                        data.profile = await NASDAQ.getProfile(symbol)
+                        data.summary = await NASDAQ.getSummary(symbol)
+                        data.info = await NASDAQ.getInfo(symbol)
+                        data.analysis = await NASDAQ.getAnalysis(symbol)
+                        data.dividends = await NASDAQ.getDividends(symbol)
+                        data.financial = await NASDAQ.getFinances(symbol)
+                        data.revenue = await NASDAQ.getRevenue(symbol)
+                        data.insider_trades = await NASDAQ.getInsiderTrades(symbol,200)
+                        data.history = await NASDAQ.history(symbol,retroDate(30));
+                    }else{
+                        data.dados1 = await B3.getExpressive1(symbol);
+                        data.dados2 = await B3.getExpressive2(symbol);
+                    }
                 }
-            });
+                data = sanitizeData(data);
+                // Geração do relatório
+                const markdownContent = await this.generateReport(symbol,data);
+    
+                await this.saveMarkdown(markdownContent, symbol, hash);
+    
+                await prisma.reports.update({
+                    where: { hash },
+                    data: {
+                        path: `reports/${symbol}_${hash}_${this.timestamp_now}.md`,
+                        status: 'active'
+                    }
+                });
+    
+                console.log(`✅ Análise completa concluída! Relatórios gerados.`);
 
-            console.log(`✅ Análise completa concluída! Relatórios gerados.`);
+            }else{
+                console.error('❌ Erro na análise: Stock Desconhecido');
+            }
+
 
         } catch (error) {
             await prisma.reports.update({
@@ -194,10 +225,10 @@ export default class StockAnalyzer {
         });
     }
 
-    async generateReport(symbol) {
+    async generateReport(symbol,data=null) {
         console.log('📝 Gerando relatório com streaming...');
         
-        const analysisPrompt = this.createAnalysisPrompt(symbol);
+        const analysisPrompt = this.createAnalysisPrompt(symbol,data);
         let fullReport = '';
         
         // Cria arquivo vazio primeiro
@@ -226,7 +257,7 @@ export default class StockAnalyzer {
         // return this.formatMarkdownReport(symbol, aiAnalysis);
     }
 
-    createAnalysisPrompt(symbol) {
+    createAnalysisPrompt(symbol,data=null) {
         return `
 Com base nos dados coletados abaixo, crie um relatório COMPLETO de análise de ações para ${symbol}.
 Eu quero que você me forneça o máximo de informação possível, e recomendações. Eu quero que forneça o melhor ponto de entrada no mercado, o melhor ponto de saída, stop loss, etc.
@@ -238,7 +269,7 @@ Seja criativo e discursivo, pode fazer textos mais elaborados e inteligentes.
 Eu vou fornecer um modelo, mas ele só tem o propósito de organizar mais ou menos. Fique à vontade para sair um pouco do modelo se você tiver informações, fundamentos ou colocações que eu não consegui prever no modelo. Você tem total autonomia para fornecer esse relatório, desde que seja o mais completo e poderoso possível.
 
 DADOS COLETADOS:
-${JSON.stringify(this.researchData, null, 2)}
+${JSON.stringify(data ? data : this.researchData, null, 2)}
 
 INSTRUÇÕES PARA O RELATÓRIO:
 

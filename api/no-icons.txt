@@ -47,3 +47,4 @@ https://cdn.changelly.com/icons-colored/xdc.svg
 https://cdn.changelly.com/icons-colored/hnt1.svg
 https://cdn.changelly.com/icons-colored/one2.svg
 https://icons.brapi.dev/icons/AXIA3.svg
+https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/META.svg

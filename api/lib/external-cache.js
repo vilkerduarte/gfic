@@ -183,11 +183,32 @@ export class CryptoData {
   }
   static async getQuotes(symbol){
     const apiKey = brapiClient.apiKey;
-    fetch("https://brapi.dev/api/v2/crypto?coin=string", {
+    return await CryptoData.fetch("https://brapi.dev/api/v2/crypto?coin="+symbol, {
       method: "GET",
       headers: {
-        "Authorization": "Bearer "
+        "Authorization": `Bearer ${apiKey}`
       }
-    })
+    });
+  }
+}
+
+export class B3{
+  static async getExpressive1(symbol){
+    const apiKey = brapiClient.apiKey;
+    return await CryptoData.fetch(`https://brapi.dev/api/quote/${symbol}?modules=summaryProfile,balanceSheetHistory,balanceSheetHistoryQuarterly,defaultKeyStatistics,defaultKeyStatisticsHistory`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`
+      }
+    });
+  }
+  static async getExpressive2(symbol){
+    const apiKey = brapiClient.apiKey;
+    return await CryptoData.fetch(`https://brapi.dev/api/quote/${symbol}?modules=incomeStatementHistory,incomeStatementHistoryQuarterly,financialData,financialDataHistoryQuarterly,cashflowHistoryQuarterly,valueAddedHistoryQuarterly`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`
+      }
+    });
   }
 }

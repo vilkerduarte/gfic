@@ -12,7 +12,7 @@ router.get('/logo/:filename', async (req, res) => {
     let [symbol,type,currency] = filename.replace(ext, '').split('--');
     type = type.toLowerCase().replaceAll(' ','-');
     // console.log(req.url,req.params);
-    // console.log(symbol,type);
+    console.log(symbol,type);
     const mimeTypes = {
       '.svg': 'image/svg+xml',
       '.png': 'image/png',

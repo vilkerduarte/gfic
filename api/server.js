@@ -208,13 +208,13 @@ async function socketHomeFetch(payload, user) {
 }
 
 io.on('connection', (socket) => {
-  socket.onAny((event,...args)=>{
-    console.log('===============================');
-    console.log(event)
-    console.log('===============================');
-    console.log(args);
-    console.log('.......................................')
-  })
+  // socket.onAny((event,...args)=>{
+  //   console.log('===============================');
+  //   console.log(event)
+  //   console.log('===============================');
+  //   console.log(args);
+  //   console.log('.......................................')
+  // })
 
   const user = socket.data.user
   const userRoom = user ? `user:${user.id}` : null
