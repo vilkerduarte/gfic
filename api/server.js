@@ -208,17 +208,19 @@ async function socketHomeFetch(payload, user) {
 }
 
 io.on('connection', (socket) => {
-  // socket.onAny((event,...args)=>{
-  //   console.log('===============================');
-  //   console.log(event)
-  //   console.log('===============================');
-  //   console.log(args);
-  //   console.log('.......................................')
-  // })
+  socket.onAny((event,...args)=>{
+    console.log('===============================');
+    console.log(event)
+    console.log('===============================');
+    console.log(args);
+    console.log('.......................................')
+  })
 
   const user = socket.data.user
   const userRoom = user ? `user:${user.id}` : null
   if (userRoom) socket.join(userRoom)
+  
+  
 
   socket.on('home:fetch', async (payload = {}) => {
     const reqId = payload?.reqId || randomUUID()
@@ -245,7 +247,7 @@ io.on('connection', (socket) => {
         
         socket.emit('asset:details:result', { reqId: id, ok: true, data: output })
       }else{
-        console.log(stock);
+        // console.log(stock);
         if (!stock) return socket.emit('asset:details:result', { reqId: id, ok: false, error: 'Ativo não encontrado' });
         stock = sanitizeData(stock);
         const series = await fetchHistoricalDataForStock(stock)

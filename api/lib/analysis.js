@@ -2,7 +2,7 @@ export function analyzeStockData(series) {
   if (!series || !Array.isArray(series.candles)) {
     return { error: 'Invalid price series' }
   }
-  console.log(series);
+  // console.log(series);
 
   const validData = series.candles
     .map((candle) => ({

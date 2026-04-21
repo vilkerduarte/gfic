@@ -55,7 +55,7 @@
                 <span class="block text-[14px] text-center border-t border-slate-700 text-slate-300">Global Financial Information Center</span>
             </div>
         </div>
-        <div class="absolute inset-0 overflow-hidden border z-[-10]">
+        <div class="absolute inset-0 overflow-hidden z-[-10]">
             <div class="relative w-full h-full overflow-hidden">
                 <div class="absolute w-[200vw] left-[-100vw] top-10 opacity-10 aspect-square md:hidden">
                     <img src="/logo_white.svg" alt="GFIC" class="w-full"></img>

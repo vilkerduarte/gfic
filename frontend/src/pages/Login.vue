@@ -51,7 +51,7 @@
 
             </form>
         </div>
-        <div class="absolute inset-0 overflow-hidden border z-[-10]">
+        <div class="absolute inset-0 overflow-hidden z-[-10]">
             <div class="relative w-full h-full overflow-hidden">
                 <div class="absolute w-[200vw] left-0 top-10 opacity-10 aspect-square md:hidden">
                     <img src="/logo_white.svg" alt="GFIC" class="w-full"></img>

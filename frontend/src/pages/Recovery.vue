@@ -43,7 +43,7 @@
                 <p v-if="successMessage" class="text-green-400 text-sm mt-3">{{ successMessage }}</p>
             </form>
         </div>
-        <div class="absolute inset-0 overflow-hidden border z-[-10]">
+        <div class="absolute inset-0 overflow-hidden z-[-10]">
             <div class="relative w-full h-full overflow-hidden">
                 <div class="absolute w-[200vw] left-[-50vw] top-10 opacity-10 aspect-square md:hidden">
                     <img src="/logo_white.svg" alt="GFIC" class="w-full"></img>

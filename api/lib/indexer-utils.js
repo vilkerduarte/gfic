@@ -214,7 +214,7 @@ export async function fetchCrypto(moedas = false) {
         const m = moedas[x];
         lote.push(m);
         if (lote.length == 10) {
-            console.log(lote.join(','));
+            // console.log(lote.join(','));
             let quotes = await brapiClient.v2.crypto.retrieve({
                 coin: lote.join(','),
                 currency: 'BRL'
@@ -227,7 +227,7 @@ export async function fetchCrypto(moedas = false) {
         }
     }
     if (lote.length) {
-        console.log(lote.join(','));
+        // console.log(lote.join(','));
         let quotes = await brapiClient.v2.crypto.retrieve({
             coin: lote.join(','),
             currency: 'BRL'

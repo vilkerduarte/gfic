@@ -70,8 +70,9 @@ async function callFinnhub(methodName, ...args) {
 
 export async function fetchFinnhubQuote(symbol) {
   if (!symbol || !FINNHUB_TOKEN) return null
+  console.log("Consultando Finnhub...");
   const data = await callFinnhub('quote', symbol)
-  console.log(data);
+  // console.log(data);
   if (!data) return null
   return {
     current: data.c ?? null,
