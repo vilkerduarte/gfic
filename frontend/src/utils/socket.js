@@ -29,16 +29,17 @@ function makeReqId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
-export function emitAsync(event, payload = {}) {
+export function emitAsync(event, payload = {}, options = {}) {
   if (!socket || !socket.connected) return Promise.reject(new Error('socket not connected'))
   const reqId = payload.reqId || makeReqId()
   const respEvent = `${event}:result`
+  const timeoutMs = Math.max(1000, Number(options?.timeoutMs) || 30000)
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       socket.off(respEvent, handler)
       pending.delete(reqId)
       reject(new Error('timeout'))
-    }, 10000)
+    }, timeoutMs)
 
     const handler = (resp) => {
       if (!resp || resp.reqId !== reqId) return

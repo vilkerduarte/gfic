@@ -8,9 +8,36 @@ import {
 } from './indexer-utils.js'
 
 const FINNHUB_TOKEN = process.env.FINNHUB_API_KEY
+const BRAPI_SERIES_CACHE_TTL_MS = 40 * 60 * 1000
+const brapiSeriesCache = new Map()
+const brapiSeriesInflight = new Map()
 
 const toFloat = (value, divisor = 1) =>
   value === null || value === undefined ? null : Number(value) / divisor
+
+const cloneSeries = (series) => ({
+  ...series,
+  candles: Array.isArray(series?.candles)
+    ? series.candles.map((candle) => ({ ...candle }))
+    : []
+})
+
+const readBrapiSeriesCache = (symbol) => {
+  const cached = brapiSeriesCache.get(symbol)
+  if (!cached) return null
+  if (cached.expiresAt <= Date.now()) {
+    brapiSeriesCache.delete(symbol)
+    return null
+  }
+  return cloneSeries(cached.data)
+}
+
+const writeBrapiSeriesCache = (symbol, data) => {
+  brapiSeriesCache.set(symbol, {
+    expiresAt: Date.now() + BRAPI_SERIES_CACHE_TTL_MS,
+    data: cloneSeries(data)
+  })
+}
 
 export const findStockBySymbol = async (symbol) => {
   if (!symbol) return null
@@ -241,63 +268,81 @@ export async function fetchHistoricalDataBySymbol(symbol) {
 
 async function fetchBrapiSeries(stock) {
   const symbol = stock.symbol.toUpperCase()
-  const resp = await brapiClient.quote.retrieve(symbol, {
-    range: '3mo',
-    interval: '1d',
-    fundamental: false,
-    dividends: false
-  })
+  const cached = readBrapiSeriesCache(symbol)
+  if (cached) return cached
 
-  const result = resp?.results?.[0] || {}
-  const history = result.historicalDataPrice || []
-  const candles = history
-    .map((h) => ({
-      timestamp: h.date > 1e12 ? Math.floor(h.date / 1000) : h.date,
-      open: h.open ?? h.price ?? h.close,
-      high: h.high ?? h.close ?? h.price,
-      low: h.low ?? h.close ?? h.price,
-      close: h.close ?? h.price,
-      volume: h.volume
-    }))
-    .filter((c) => c.close != null)
+  const inflight = brapiSeriesInflight.get(symbol)
+  if (inflight) return inflight
 
-  const currentPrice =
-    result.regularMarketPrice ?? result.close ?? candles.at(-1)?.close ?? null
-
-  if (!candles.length && currentPrice != null) {
-    const now = Math.floor(Date.now() / 1000)
-    candles.push({
-      timestamp: now - 86400,
-      open: currentPrice,
-      high: currentPrice,
-      low: currentPrice,
-      close: currentPrice,
-      volume: result.regularMarketVolume ?? null
+  const request = (async () => {
+    const resp = await brapiClient.quote.retrieve(symbol, {
+      range: '3mo',
+      interval: '1d',
+      fundamental: false,
+      dividends: false
     })
-    candles.push({
-      timestamp: now,
-      open: currentPrice,
-      high: result.fiftyTwoWeekHigh ?? currentPrice,
-      low: result.fiftyTwoWeekLow ?? currentPrice,
-      close: currentPrice,
-      volume: result.regularMarketVolume ?? null
-    })
-  }
 
-  return {
-    symbol,
-    name:
-      result.longName ||
-      result.shortName ||
-      stock.name ||
-      result.symbol ||
+    const result = resp?.results?.[0] || {}
+    const history = result.historicalDataPrice || []
+    const candles = history
+      .map((h) => ({
+        timestamp: h.date > 1e12 ? Math.floor(h.date / 1000) : h.date,
+        open: h.open ?? h.price ?? h.close,
+        high: h.high ?? h.close ?? h.price,
+        low: h.low ?? h.close ?? h.price,
+        close: h.close ?? h.price,
+        volume: h.volume
+      }))
+      .filter((c) => c.close != null)
+
+    const currentPrice =
+      result.regularMarketPrice ?? result.close ?? candles.at(-1)?.close ?? null
+
+    if (!candles.length && currentPrice != null) {
+      const now = Math.floor(Date.now() / 1000)
+      candles.push({
+        timestamp: now - 86400,
+        open: currentPrice,
+        high: currentPrice,
+        low: currentPrice,
+        close: currentPrice,
+        volume: result.regularMarketVolume ?? null
+      })
+      candles.push({
+        timestamp: now,
+        open: currentPrice,
+        high: result.fiftyTwoWeekHigh ?? currentPrice,
+        low: result.fiftyTwoWeekLow ?? currentPrice,
+        close: currentPrice,
+        volume: result.regularMarketVolume ?? null
+      })
+    }
+
+    const output = {
       symbol,
-    currency: result.currency || stock.currency || 'BRL',
-    exchange: micNameMap.BVMF,
-    mic: 'BVMF',
-    type: stock.type || classifyB3Symbol(symbol, result.longName || result.shortName),
-    previousClose: result.regularMarketPreviousClose ?? null,
-    candles
+      name:
+        result.longName ||
+        result.shortName ||
+        stock.name ||
+        result.symbol ||
+        symbol,
+      currency: result.currency || stock.currency || 'BRL',
+      exchange: micNameMap.BVMF,
+      mic: 'BVMF',
+      type: stock.type || classifyB3Symbol(symbol, result.longName || result.shortName),
+      previousClose: result.regularMarketPreviousClose ?? null,
+      candles
+    }
+
+    writeBrapiSeriesCache(symbol, output)
+    return cloneSeries(output)
+  })()
+
+  brapiSeriesInflight.set(symbol, request)
+  try {
+    return await request
+  } finally {
+    brapiSeriesInflight.delete(symbol)
   }
 }
 
